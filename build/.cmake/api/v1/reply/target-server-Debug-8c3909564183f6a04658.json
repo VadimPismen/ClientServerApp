@@ -49,15 +49,7 @@
 			[
 				{
 					"backtrace" : 2,
-					"define" : "BOOST_ATOMIC_NO_LIB"
-				},
-				{
-					"backtrace" : 2,
-					"define" : "BOOST_FILESYSTEM_NO_LIB"
-				},
-				{
-					"backtrace" : 2,
-					"define" : "BOOST_THREAD_NO_LIB"
+					"define" : "BOOST_ALL_NO_LIB"
 				}
 			],
 			"language" : "CXX",
@@ -91,16 +83,16 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/local/lib/libboost_thread.a",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libboost_thread.a",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "/usr/local/lib/libboost_filesystem.a",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libboost_filesystem.a",
 				"role" : "libraries"
 			},
 			{
-				"fragment" : "/usr/local/lib/libboost_atomic.a",
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libboost_atomic.a",
 				"role" : "libraries"
 			}
 		],

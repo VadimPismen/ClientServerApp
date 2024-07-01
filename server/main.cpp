@@ -2,6 +2,7 @@
 
 int main()
 {
-    ServerClass sos(1234);
+    ServerClass sos(4321);
+    sos.OpenServer();
     return 0;
 }

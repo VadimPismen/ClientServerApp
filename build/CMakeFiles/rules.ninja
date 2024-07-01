@@ -42,7 +42,7 @@ rule CXX_EXECUTABLE_LINKER__server_Debug
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = /usr/bin/cmake --regenerate-during-build -S/home/vadim/repos/LinuxClientServer -B/home/vadim/repos/LinuxClientServer/build
+  command = /usr/bin/cmake --regenerate-during-build -S/home/vadim/repos/ClientServerApp/ClientServerApp -B/home/vadim/repos/ClientServerApp/ClientServerApp/build
   description = Re-running CMake...
   generator = 1
 

@@ -15,7 +15,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/usr/local/lib/cmake/Boost-1.85.0"
+			"value" : "/usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0"
 		},
 		{
 			"name" : "Boost_FILESYSTEM_LIBRARY_RELEASE",
@@ -27,7 +27,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/usr/local/lib/libboost_filesystem.a"
+			"value" : "/usr/lib/x86_64-linux-gnu/libboost_filesystem.a"
 		},
 		{
 			"name" : "Boost_INCLUDE_DIR",
@@ -39,7 +39,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/usr/local/include"
+			"value" : "/usr/include"
 		},
 		{
 			"name" : "Boost_THREAD_LIBRARY_RELEASE",
@@ -51,7 +51,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "/usr/local/lib/libboost_thread.a"
+			"value" : "/usr/lib/x86_64-linux-gnu/libboost_thread.a"
 		},
 		{
 			"name" : "CMAKE_ADDR2LINE",
@@ -107,7 +107,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/vadim/repos/LinuxClientServer/build"
+			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/build"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -651,7 +651,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/vadim/repos/LinuxClientServer"
+			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -1187,7 +1187,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/LinuxClientServer/build"
+			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/build"
 		},
 		{
 			"name" : "ClientServerApp_IS_TOP_LEVEL",
@@ -1211,7 +1211,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/LinuxClientServer"
+			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp"
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_Boost",
@@ -1223,7 +1223,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "[/usr/local/lib/cmake/Boost-1.85.0/BoostConfig.cmake][cfound components: thread filesystem ][v1.85.0()]"
+			"value" : "[/usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake][cfound components: thread filesystem ][v1.74.0()]"
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_Threads",
@@ -1251,7 +1251,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/usr/local/lib/cmake/boost_atomic-1.85.0"
+			"value" : "/usr/lib/x86_64-linux-gnu/cmake/boost_atomic-1.74.0"
 		},
 		{
 			"name" : "boost_filesystem_DIR",
@@ -1267,7 +1267,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/usr/local/lib/cmake/boost_filesystem-1.85.0"
+			"value" : "/usr/lib/x86_64-linux-gnu/cmake/boost_filesystem-1.74.0"
 		},
 		{
 			"name" : "boost_headers_DIR",
@@ -1283,7 +1283,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/usr/local/lib/cmake/boost_headers-1.85.0"
+			"value" : "/usr/lib/x86_64-linux-gnu/cmake/boost_headers-1.74.0"
 		},
 		{
 			"name" : "boost_thread_DIR",
@@ -1299,7 +1299,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "/usr/local/lib/cmake/boost_thread-1.85.0"
+			"value" : "/usr/lib/x86_64-linux-gnu/cmake/boost_thread-1.74.0"
 		},
 		{
 			"name" : "server_BINARY_DIR",
@@ -1311,7 +1311,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/LinuxClientServer/build/server"
+			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/build/server"
 		},
 		{
 			"name" : "server_IS_TOP_LEVEL",
@@ -1335,7 +1335,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/LinuxClientServer/server"
+			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/server"
 		}
 	],
 	"kind" : "cache",

@@ -81,7 +81,7 @@
 				{
 					"directoryIndex" : 1,
 					"id" : "server::@d19778d2e34a1e3ddfc0",
-					"jsonFile" : "target-server-Debug-684dd3a1d615ac13973c.json",
+					"jsonFile" : "target-server-Debug-8c3909564183f6a04658.json",
 					"name" : "server",
 					"projectIndex" : 1
 				}
@@ -91,8 +91,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/vadim/repos/LinuxClientServer/build",
-		"source" : "/home/vadim/repos/LinuxClientServer"
+		"build" : "/home/vadim/repos/ClientServerApp/ClientServerApp/build",
+		"source" : "/home/vadim/repos/ClientServerApp/ClientServerApp"
 	},
 	"version" : 
 	{
