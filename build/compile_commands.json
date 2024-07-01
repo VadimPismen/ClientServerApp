@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/home/vadim/repos/LinuxClientServer/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -g -o server/CMakeFiles/server.dir/main.cpp.o -c /home/vadim/repos/LinuxClientServer/server/main.cpp",
+  "file": "/home/vadim/repos/LinuxClientServer/server/main.cpp"
+},
+{
+  "directory": "/home/vadim/repos/LinuxClientServer/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_NO_LIB -DBOOST_THREAD_NO_LIB -g -o server/CMakeFiles/server.dir/ServerClass.cpp.o -c /home/vadim/repos/LinuxClientServer/server/ServerClass.cpp",
+  "file": "/home/vadim/repos/LinuxClientServer/server/ServerClass.cpp"
+}
+]

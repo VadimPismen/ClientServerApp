@@ -1,16 +1,7 @@
-﻿# CMakeList.txt: файл проекта CMake верхнего уровня; проведите глобальную конфигурацию
-# и включите сюда подпроекты.
-#
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required(VERSION 3.7)
+project(ClientServerApp)
 
-# Включение горячей перезагрузки для компиляторов MSVC, если поддерживается.
-if (POLICY CMP0141)
-  cmake_policy(SET CMP0141 NEW)
-  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-endif()
+add_subdirectory(server)
 
-project ("LinuxClientServer")
-
-# Включите подпроекты.
-add_subdirectory ("LinuxServer")
-add_subdirectory ("LinuxClient")
+add_custom_target(ClientServerApp)
+add_dependencies(ClientServerApp server)

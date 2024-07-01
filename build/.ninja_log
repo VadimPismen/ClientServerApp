@@ -1,0 +1,7 @@
+# ninja log v5
+1	6018	1719821758064056926	server/CMakeFiles/server.dir/main.cpp.o	44dd0abffb3e06f5
+8	4522	1719821969462704724	server/CMakeFiles/server.dir/ServerClass.cpp.o	2fefeb745c379030
+4522	4757	1719821969698707969	server/server	1ab7af65e6e8c1f8
+4	6297	1719822274483178244	server/CMakeFiles/server.dir/main.cpp.o	a1e7f7f53736c516
+4	6421	1719822274607180140	server/CMakeFiles/server.dir/ServerClass.cpp.o	a72d9a9447badd34
+6424	6693	1719822274883184358	server/server	1ab7af65e6e8c1f8
