@@ -4,3 +4,6 @@
 /home/vadim/repos/ClientServerApp/ClientServerApp/build/server/CMakeFiles/server.dir
 /home/vadim/repos/ClientServerApp/ClientServerApp/build/server/CMakeFiles/edit_cache.dir
 /home/vadim/repos/ClientServerApp/ClientServerApp/build/server/CMakeFiles/rebuild_cache.dir
+/home/vadim/repos/ClientServerApp/ClientServerApp/build/client/CMakeFiles/client.dir
+/home/vadim/repos/ClientServerApp/ClientServerApp/build/client/CMakeFiles/edit_cache.dir
+/home/vadim/repos/ClientServerApp/ClientServerApp/build/client/CMakeFiles/rebuild_cache.dir

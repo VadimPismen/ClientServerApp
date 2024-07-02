@@ -3,15 +3,15 @@ cmake_minimum_required(VERSION 3.7)
 set(CMAKE_CXX_STANDARD 17)
 
 set (PROJECT 
-	server)
+	client)
  
 set (SOURCES
 	main.cpp
-    ServerClass.cpp)
+    ClientClass.cpp)
 
 set (HEADERS
     ../common.h
-    ServerClass.h)
+    ClientClass.h)
 
 set (BOOST_COMPONENTS 
 	thread

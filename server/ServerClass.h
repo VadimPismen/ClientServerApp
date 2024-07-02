@@ -1,7 +1,4 @@
 #include "../common.h"
-#include "ClientThread.h"
-
-class ClientThread;
 
 class ServerClass
 {
@@ -12,10 +9,12 @@ public:
     void OpenServer();
 
 private:
-
+    void WorkWithClient_(int socket);
+    void SendToClient_(int __fd, const void *__buf, size_t __n);
+    
     uint16_t port_;
     int serverSocket_;
     struct sockaddr_in addr_;
 
-    std::vector<ClientThread> listOfClients_;
+    std::map<int, boost::thread> listOfClients_;
 };
