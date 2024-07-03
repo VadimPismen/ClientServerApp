@@ -1,26 +1,28 @@
 #include "../common.h"
 
-class ClientClass
+namespace CSA
 {
-public:
-    ClientClass(std::string IP, uint16_t port);
-    ~ClientClass();
+    class ClientClass
+    {
+    public:
+        ClientClass(std::string IP, uint16_t port);
+        ~ClientClass();
 
-    void StartConnection();
+        void StartConnection();
 
-    class ConnectionLostException{};
+        class ConnectionLostException{};
 
-private:
+    private:
 
-    void WritingInput_();
-    void SendToServer_(int __fd, const void *__buf, size_t __n);
-    void GetFromServer_(int __fd, void *__buf, size_t __n);
+        void SendStringToServer_(const std::string message);
+        void SendPieceToServer_(const std::string message);
 
-    std::string IP_;
-    uint16_t port_;
+        std::string IP_;
+        uint16_t port_;
 
-    int clientSocket_;
-    struct sockaddr_in addr_;
+        ClientState state_ = ClientState::LOGIN;
+        int socket_;
+        struct sockaddr_in addr_;
 
-    boost::thread inputThread_;
-};
+    };
+}

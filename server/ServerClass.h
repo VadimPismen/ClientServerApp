@@ -1,20 +1,28 @@
+#pragma once
+
 #include "../common.h"
+#include "ClientThread.h"
 
-class ServerClass
+namespace CSA
 {
-public:
-    ServerClass(uint16_t port);
-    ~ServerClass();
-
-    void OpenServer();
-
-private:
-    void WorkWithClient_(int socket);
-    void SendToClient_(int __fd, const void *__buf, size_t __n);
+    class ClientThread;
     
-    uint16_t port_;
-    int serverSocket_;
-    struct sockaddr_in addr_;
+    class ServerClass
+    {
+    public:
+        ServerClass(uint16_t port);
+        ~ServerClass();
 
-    std::map<int, boost::thread> listOfClients_;
-};
+        void OpenServer();
+        void DeleteClient(int socket);
+
+    private:
+        
+        uint16_t port_;
+        int serverSocket_;
+        struct sockaddr_in addr_;
+
+        boost::thread RequestsServitor_;
+        std::map<int, ClientThread> listOfClients_;
+    };
+}

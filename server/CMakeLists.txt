@@ -7,11 +7,13 @@ set (PROJECT
  
 set (SOURCES
 	main.cpp
-    ServerClass.cpp)
+    ServerClass.cpp
+	ClientThread.cpp)
 
 set (HEADERS
     ../common.h
-    ServerClass.h)
+    ServerClass.h
+	ClientThread.h)
 
 set (BOOST_COMPONENTS 
 	thread

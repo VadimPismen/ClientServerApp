@@ -99,6 +99,14 @@ build server/CMakeFiles/server.dir/ServerClass.cpp.o: CXX_COMPILER__server_Debug
   OBJECT_DIR = server/CMakeFiles/server.dir
   OBJECT_FILE_DIR = server/CMakeFiles/server.dir
 
+build server/CMakeFiles/server.dir/ClientThread.cpp.o: CXX_COMPILER__server_Debug /home/vadim/repos/ClientServerApp/ClientServerApp/server/ClientThread.cpp || cmake_object_order_depends_target_server
+  DEFINES = -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT
+  DEP_FILE = server/CMakeFiles/server.dir/ClientThread.cpp.o.d
+  FLAGS = -g
+  INCLUDES = -I/home/vadim/repos/ClientServerApp/ClientServerApp/server/server
+  OBJECT_DIR = server/CMakeFiles/server.dir
+  OBJECT_FILE_DIR = server/CMakeFiles/server.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target server
@@ -107,7 +115,7 @@ build server/CMakeFiles/server.dir/ServerClass.cpp.o: CXX_COMPILER__server_Debug
 #############################################
 # Link the executable server/server
 
-build server/server: CXX_EXECUTABLE_LINKER__server_Debug server/CMakeFiles/server.dir/main.cpp.o server/CMakeFiles/server.dir/ServerClass.cpp.o | /usr/lib/x86_64-linux-gnu/libboost_thread.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a /usr/local/lib/libglog.so.0.8.0 /usr/lib/x86_64-linux-gnu/libboost_atomic.a /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2
+build server/server: CXX_EXECUTABLE_LINKER__server_Debug server/CMakeFiles/server.dir/main.cpp.o server/CMakeFiles/server.dir/ServerClass.cpp.o server/CMakeFiles/server.dir/ClientThread.cpp.o | /usr/lib/x86_64-linux-gnu/libboost_thread.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a /usr/local/lib/libglog.so.0.8.0 /usr/lib/x86_64-linux-gnu/libboost_atomic.a /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2
   FLAGS = -g
   LINK_LIBRARIES = -Wl,-rpath,/usr/local/lib  /usr/lib/x86_64-linux-gnu/libboost_thread.a  /usr/lib/x86_64-linux-gnu/libboost_filesystem.a  /usr/local/lib/libglog.so.0.8.0  /usr/lib/x86_64-linux-gnu/libboost_atomic.a  /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2  -lpthread
   OBJECT_DIR = server/CMakeFiles/server.dir
