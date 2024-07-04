@@ -15,10 +15,14 @@
 #include <glog/logging.h>
 #include <map>
 
+#include <libconfig.h++>
+
 namespace CSA
 {
     const size_t bufsize = 1024;
     const std::string SIGN = "CSA";
+    const std::string SUCCESS = "SUCCESS";
+    const std::string GETOUT = "GETOUT";
     
     enum class ClientState{
         IDLE,

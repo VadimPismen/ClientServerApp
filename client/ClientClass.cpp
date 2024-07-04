@@ -30,15 +30,46 @@ void ClientClass::StartConnection() {
         {
         case ClientState::LOGIN:
         {
-            std::string message;
-            getline(std::cin, message);
-            SendStringToServer_(message);
+            while(true){
+                std::cout << "Login: ";
+                login_ = WriteAndSendToServer_();
+
+                std::cout << "Password: ";
+                WriteAndSendToServer_();
+
+                std::string result = GetStringFromServer_();
+                
+                if (IsSuccess_(result)){
+                    std::cout << "Successful login!" << std::endl;
+                    LOG(INFO) << "Successful login as " << login_;
+                    state_ = ClientState::IDLE;
+                    break;
+                }
+                else{
+                    if (result != GETOUT){
+                        std::cout << result << std::endl << std::endl;
+                        LOG(INFO) << "Unsuccessful attempt.";
+                    }
+                    else{
+                        std::cout << "Alas!";
+                        LOG(WARNING) << "couldn't login...";
+                        throw KickedException();
+                    }
+                }
+            }
             break;
         }
         default:
             break;
         }
     }
+}
+
+std::string ClientClass::WriteAndSendToServer_(){
+    std::string message;
+    getline(std::cin, message);
+    SendStringToServer_(message);
+    return message;
 }
 
 void ClientClass::SendPieceToServer_(const std::string message){
@@ -59,4 +90,31 @@ void ClientClass::SendStringToServer_(const std::string message){
     for (size_t i = 0; i < countOfBlocks; i++){
         SendPieceToServer_(message.substr(i*CSA::bufsize, CSA::bufsize));
     }
+}
+
+std::string ClientClass::GetStringFromServer_(){
+    size_t sizeOfData = std::stoull(GetPieceFromServer_());
+    std::string serverData = "";
+    size_t countOfBlocks = sizeOfData / CSA::bufsize;
+    if (sizeOfData % CSA::bufsize != 0){
+        countOfBlocks++;
+    }
+    for (size_t i = 0; i < countOfBlocks; i++){
+        serverData += GetPieceFromServer_();
+    }
+    return serverData;
+}
+
+std::string ClientClass::GetPieceFromServer_(){
+    char buffer[CSA::bufsize];
+    ssize_t countOfData = recv(socket_, &buffer, CSA::bufsize, MSG_NOSIGNAL);
+        if (countOfData < 0){
+            LOG(ERROR) << "lost connection to server " << IP_ << ':' << port_;
+            throw ConnectionLostException();
+        }
+    return std::string(buffer);
+}
+
+bool ClientClass::IsSuccess_(const std::string message){
+    return (message == SUCCESS);
 }

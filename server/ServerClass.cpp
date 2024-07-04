@@ -2,7 +2,9 @@
 
 using namespace CSA;
 
-ServerClass::ServerClass(uint16_t port): port_(port){}
+ServerClass::ServerClass(uint16_t port, std::string cfgFile): port_(port), cfgFile_(cfgFile){
+    LookForAccount("Vadim", "hehe");
+}
 
 ServerClass::~ServerClass(){
     close(serverSocket_);
@@ -31,11 +33,31 @@ void ServerClass::OpenServer(){
         listen(serverSocket_, SOMAXCONN);
         int sock = accept(serverSocket_, NULL, NULL);
         if (sock >= 0){
-            listOfClients_.emplace(std::piecewise_construct, std::forward_as_tuple(sock), std::forward_as_tuple(sock, this)); 
+            listOfClients_.try_emplace(sock);
+            listOfClients_[sock].StartWorking(sock, this);
         }
     }
 }
 
 void ServerClass::DeleteClient(int socket){
+    close(socket);
     listOfClients_.erase(socket);
+    return;
+}
+
+bool ServerClass::LookForAccount(std::string login, std::string password){
+    libconfig::Config cfg_;
+    cfg_.readFile("config.cfg");
+    libconfig::Setting& root_ =  cfg_.getRoot();
+    libconfig::Setting& accounts_ = root_.lookup("accounts");
+    int count = accounts_.getLength();
+    std::string checkLogin;
+    std::string checkPassword;
+    for (int i = 0; i < count; i++){
+        const libconfig::Setting& account = accounts_[i];
+        bool sos = accounts_.lookupValue("login", login);
+        // Что-то не так
+        return true;
+    }
+    return false;
 }

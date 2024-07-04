@@ -12,14 +12,21 @@ class ClientThread{
 
 public:
 
-    ClientThread(int socket, ServerClass* parent);
+    ClientThread();
     ~ClientThread();
 
-private:
+    void StartWorking(int socket, ServerClass* parent);
 
+    class ConnectionLostException{};
+
+private:
     void WorkWithClient_();
+
     std::string GetStringFromClient_();
     std::string GetPieceFromClient_();
+
+    void SendStringToClient_(std::string message);
+    void SendPieceToClient_(std::string message);
 
     ClientState state_ = ClientState::LOGIN;
     ServerClass* parent_;
@@ -30,6 +37,6 @@ private:
     uint16_t port_;
     std::string IP_;
 
-    void LogIn_();
+    bool LogIn_();
 };
 }

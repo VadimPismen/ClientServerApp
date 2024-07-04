@@ -2,7 +2,16 @@
 
 using namespace CSA;
 
-ClientThread::ClientThread(int socket, ServerClass* parent): socket_(socket), parent_(parent){
+ClientThread::ClientThread(){}
+
+ClientThread::~ClientThread(){
+    close(socket_);
+}
+
+void ClientThread::StartWorking(int socket, ServerClass* parent){
+    socket_ = socket;
+    parent_ = parent;
+
     struct sockaddr_in clientData;
     socklen_t size = sizeof(clientData);
 
@@ -12,28 +21,55 @@ ClientThread::ClientThread(int socket, ServerClass* parent): socket_(socket), pa
     port_ = htons(clientData.sin_port);
 
     LOG(INFO) << "new connection from " << IP_ << ':' << port_;
-
-    boost::thread(&ClientThread::WorkWithClient_, this);
-}
-
-ClientThread::~ClientThread(){
-    close(socket_);
-    parent_->DeleteClient(socket_);
+    workingThread_ = boost::thread(&ClientThread::WorkWithClient_, this);
+    return;
 }
 
 void ClientThread::WorkWithClient_(){
-    while(true){
-        switch (state_)
-        {
-        case ClientState::LOGIN:
+    try{
+        while(true){
+            switch (state_)
             {
-                LogIn_();
+            case ClientState::LOGIN:
+                {
+                    if (LogIn_()){
+                        state_ == ClientState::IDLE;
+                    }
+                    else{
+                        LOG(WARNING) << IP_ << ':' << port_ << ": couldn't login. Kicked!";
+                        parent_->DeleteClient(socket_);
+                        return;
+                    }
+                    break;
+                }
+            default:
                 break;
             }
-        default:
-            break;
         }
-        
+    }
+    catch(...){
+        LOG(WARNING) << "lost connection to " << IP_ << ':' << port_;
+        parent_->DeleteClient(socket_);
+        return;
+    }
+}
+
+void ClientThread::SendPieceToClient_(const std::string message){
+    const char* buffer = message.c_str();
+    if (send(socket_, buffer, CSA::bufsize, MSG_NOSIGNAL) < 0){
+        throw ConnectionLostException();
+    }
+}
+
+void ClientThread::SendStringToClient_(const std::string message){
+    size_t sizeOfData = message.length();
+    SendPieceToClient_(std::to_string(sizeOfData) + '\n');
+    size_t countOfBlocks = sizeOfData / CSA::bufsize;
+    if (sizeOfData % CSA::bufsize != 0){
+        countOfBlocks++;
+    }
+    for (size_t i = 0; i < countOfBlocks; i++){
+        SendPieceToClient_(message.substr(i*CSA::bufsize, CSA::bufsize));
     }
 }
 
@@ -55,37 +91,35 @@ std::string ClientThread::GetStringFromClient_(){
     return clientData;
 }
 
-void ClientThread::LogIn_(){
-    std::string login = GetStringFromClient_();
-    LOG(INFO) << IP_ << ':' << port_ << " is " << login;
-    std::string password = GetStringFromClient_();
-    LOG(INFO) << IP_ << ':' << port_ << " is " << password;
+bool ClientThread::LogIn_(){
+    unsigned char attempts = 3;
+    while(true){
+        std::string login = GetStringFromClient_();
+        std::string password = GetStringFromClient_();
+        if (parent_->LookForAccount(login, password)){
+            SendStringToClient_(SUCCESS);
+            LOG(INFO) << IP_ << ':' << port_ << " is " << login;
+            return true;
+        }
+        else{
+            attempts--;
+            if (attempts){
+                SendStringToClient_(std::to_string(attempts) + " attempts left.");
+                LOG(INFO) << IP_ << ':' << port_ << ": unsuccessful login attempt.";
+            }
+            else{
+                SendStringToClient_(GETOUT);
+                return false;
+            }
+        }
+    }
 }
 
 std::string ClientThread::GetPieceFromClient_(){
     char buffer[CSA::bufsize];
     ssize_t countOfData = recv(socket_, &buffer, CSA::bufsize, MSG_NOSIGNAL);
         if (countOfData < 0){
-            LOG(WARNING) << "lost connection to " << IP_ << ':' << port_;
-            this->~ClientThread();
+            throw ConnectionLostException();
         }
     return std::string(buffer);
 }
-
-// ssize_t clientData = recv(socket_, &buffer_, CSA::bufsize, MSG_NOSIGNAL);
-//         if (clientData > 0){
-//               LOG(INFO) << IP_ << ':' << port_ << " says: " << buffer_;
-//         }
-//         else{
-//             LOG(WARNING) << "lost connection to " << IP_ << ':' << port_;
-//             this->~ClientThread();
-//         }
-
-
-// void ClientThread::SendToClient_(const std::string message){
-//     buffer = std::string
-//     ssize_t clientData = recv(socket_, &buffer_, CSA::bufsize, MSG_NOSIGNAL);
-//     if (send(__fd, __buf, __n, MSG_NOSIGNAL) < 0){
-//         throw boost::thread_interrupted();
-//     }
-// }
