@@ -18,10 +18,12 @@ namespace CSA
         std::string WriteAndSendToServer_();
         void SendStringToServer_(const std::string message);
         void SendPieceToServer_(const std::string message);
+        std::string WriteString_();
 
         std::string GetStringFromServer_();
         std::string GetPieceFromServer_();
-        bool IsSuccess_(const std::string message);
+
+        void ParseCommand_(const std::string command);
 
         std::string IP_;
         uint16_t port_;

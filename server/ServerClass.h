@@ -10,7 +10,7 @@ namespace CSA
     class ServerClass
     {
     public:
-        ServerClass(uint16_t port, std::string cfgFile);
+        ServerClass(std::string cfgFile);
         ~ServerClass();
 
         void OpenServer();
@@ -22,12 +22,12 @@ namespace CSA
     private:
         
         std::string cfgFile_;
+        libconfig::Config cfg_;
 
-        uint16_t port_;
+        int port_;
         int serverSocket_;
         struct sockaddr_in addr_;
 
-        boost::thread RequestsServitor_;
         std::map<int, ClientThread> listOfClients_;
     };
 }

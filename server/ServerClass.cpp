@@ -2,8 +2,11 @@
 
 using namespace CSA;
 
-ServerClass::ServerClass(uint16_t port, std::string cfgFile): port_(port), cfgFile_(cfgFile){
-    LookForAccount("Vadim", "hehe");
+ServerClass::ServerClass(std::string cfgFile): cfgFile_(cfgFile){
+    cfg_.readFile("config.cfg");
+    libconfig::Setting& root_ =  cfg_.getRoot();
+    libconfig::Setting& serverconfs_ = root_.lookup("server");
+    serverconfs_.lookupValue("port", port_);
 }
 
 ServerClass::~ServerClass(){
@@ -28,6 +31,7 @@ void ServerClass::OpenServer(){
         perror("Bind error: ");
         exit(1);
     }
+    std::cout << "Server is opened on " << inet_ntoa(addr_.sin_addr) << ':' << port_;
     LOG(INFO) << "Server is opened on " << inet_ntoa(addr_.sin_addr) << ':' << port_;
     while(true){
         listen(serverSocket_, SOMAXCONN);
@@ -46,8 +50,6 @@ void ServerClass::DeleteClient(int socket){
 }
 
 bool ServerClass::LookForAccount(std::string login, std::string password){
-    libconfig::Config cfg_;
-    cfg_.readFile("config.cfg");
     libconfig::Setting& root_ =  cfg_.getRoot();
     libconfig::Setting& accounts_ = root_.lookup("accounts");
     int count = accounts_.getLength();
@@ -55,9 +57,14 @@ bool ServerClass::LookForAccount(std::string login, std::string password){
     std::string checkPassword;
     for (int i = 0; i < count; i++){
         const libconfig::Setting& account = accounts_[i];
-        bool sos = accounts_.lookupValue("login", login);
-        // Что-то не так
-        return true;
+        std::string checkLogin;
+        account.lookupValue("login", checkLogin);
+        std::string checkPassword;
+        account.lookupValue("password", checkPassword);
+        if (login == checkLogin && password == checkPassword)
+        {
+            return true;
+        }
     }
     return false;
 }
