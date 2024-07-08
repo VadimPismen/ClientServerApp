@@ -68,3 +68,39 @@ bool ServerClass::LookForAccount(std::string login, std::string password){
     }
     return false;
 }
+
+std::string ServerClass::GetUserDirFromConfs(std::string login){
+    libconfig::Setting& root_ =  cfg_.getRoot();
+    libconfig::Setting& accounts_ = root_.lookup("accounts");
+    int count = accounts_.getLength();
+    for (int i = 0; i < count; i++){
+        const libconfig::Setting& account = accounts_[i];
+        std::string checkLogin;
+        account.lookupValue("login", checkLogin);
+        if (login == checkLogin)
+        {
+            std::string dir;
+            account.lookupValue("dir", dir);
+            return dir;
+        }
+    }
+    return "";
+}
+
+void ServerClass::SaveUserDir(std::string login, std::string dir)
+{
+    libconfig::Setting& root_ =  cfg_.getRoot();
+    libconfig::Setting& accounts_ = root_.lookup("accounts");
+    int count = accounts_.getLength();
+    for (int i = 0; i < count; i++){
+        const libconfig::Setting& account = accounts_[i];
+        std::string checkLogin;
+        account.lookupValue("login", checkLogin);
+        if (login == checkLogin)
+        {
+            libconfig::Setting& dirSet = account.lookup("dir");
+            dirSet = dir;
+            cfg_.writeFile(cfgFile_);
+        }
+    }
+}

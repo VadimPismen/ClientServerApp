@@ -17,6 +17,8 @@ namespace CSA
         void DeleteClient(int socket);
 
         bool LookForAccount(std::string login, std::string password);
+        std::string GetUserDirFromConfs(std::string login);
+        void SaveUserDir(std::string login, std::string dir);
         
 
     private:

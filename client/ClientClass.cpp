@@ -2,10 +2,13 @@
 
 using namespace CSA;
 
-ClientClass::ClientClass(std::string IP, uint16_t port): IP_(IP), port_(port){};
+ClientClass::ClientClass(std::string IP, uint16_t port): IP_(IP), port_(port){
+    // cfg_.readFile("config.cfg");
+    // libconfig::Setting& root_ =  cfg_.getRoot();
+};
 
 ClientClass::~ClientClass(){
-    close(socket_);
+    close(port_);
 }
 
 void ClientClass::StartConnection() {
@@ -44,6 +47,11 @@ void ClientClass::StartConnection() {
                     if (result == SUCCESS){
                         std::cout << "Successful login!" << std::endl;
                         LOG(INFO) << "Successful login as " << login_;
+                        std::string result;
+                        while(result != ENDOFRES){
+                            std::cout << result << std::endl;
+                            result = GetStringFromServer_();
+                        }
                         state_ = ClientState::IDLE;
                         break;
                     }
@@ -68,13 +76,42 @@ void ClientClass::StartConnection() {
             }
             case ClientState::IDLE:
             {
-                ParseCommand_(WriteString_());
+
+                std::string command = WriteString_();
+                SendStringToServer_(command);
+                if (IsSpecCommand_(command)){
+                    break;
+                }
+                std::string result = GetStringFromServer_();
+                if (result == GOODBYE){
+                    LOG(INFO) << "Exiting...";
+                    this->~ClientClass();
+                    return;
+                    break;
+                }
+                while(result != ENDOFRES){
+                    std::cout << result << std::endl;
+                    result = GetStringFromServer_();
+                }
                 break;
             }
-            case ClientState::WAITFORRESULT:
+            case ClientState::LOADFILE:
             {
-                std::string result = GetStringFromServer_();
-                std::cout << result << std::endl;
+                std::string filename = GetStringFromServer_();
+                std::string dir = GetStringFromServer_();
+                if (dir == ENDOFRES){
+                    std::cout << filename << std::endl;
+                    break;
+                }
+                if (dir == DEFDIR){
+                    dir = "loads";
+                }
+                std::ofstream loadedFile(dir + "\\" + filename);
+                if (loadedFile.fail()){
+                    SendStringToServer_(BADRES);
+                    std::cout << "Bad directory";
+                    break;
+                }
                 break;
             }
             default:
@@ -105,7 +142,9 @@ std::string ClientClass::WriteString_(){
 
 std::string ClientClass::WriteAndSendToServer_(){
     std::string message;
-    getline(std::cin, message);
+    while (message == ""){
+        getline(std::cin, message);
+    }
     SendStringToServer_(message);
     return message;
 }
@@ -131,7 +170,13 @@ void ClientClass::SendStringToServer_(const std::string message){
 }
 
 std::string ClientClass::GetStringFromServer_(){
-    size_t sizeOfData = std::stoull(GetPieceFromServer_());
+    size_t sizeOfData;
+    try{
+        sizeOfData = std::stoull(GetPieceFromServer_());
+    }
+    catch(...){
+        sizeOfData = 0;
+    }
     std::string serverData = "";
     size_t countOfBlocks = sizeOfData / CSA::BUFFSIZE;
     if (sizeOfData % CSA::BUFFSIZE != 0){
@@ -152,56 +197,32 @@ std::string ClientClass::GetPieceFromServer_(){
     return std::string(buffer);
 }
 
-void ClientClass::ParseCommand_(const std::string command){
+bool ClientClass::IsSpecCommand_(const std::string command){
     if (command.empty()){
-        return;
+        return false;
     }
-    std::vector<std::string> args;
     std::istringstream ss(command);
-    std::string arg;
-    while (ss >> arg) 
-    {
-        args.push_back(arg);
-    }
+    std::string firstArg;
+    ss >> firstArg;
     try{
-        const Commands com = COMMANDS.at(args[0]);
+        const Commands com = COMMANDS.at(firstArg);
         switch (com)
         {
-            case Commands::EXIT:
+            case Commands::LOADFILE:
             {
-                SendStringToServer_("1");
-                SendStringToServer_(args[0]);
-                state_ = ClientState::EXIT;
+                state_ = ClientState::LOADFILE;
+                return true;
                 break;
             }
-            case Commands::HELP:
+            default:
             {
-                if (args.size() == 1){
-                    for(auto& helpStr : HELPSTRINGS){
-                        std::cout << helpStr.second << std::endl;
-                    }
-                    std::cout << std::endl;
-                }
-                else{
-                    try
-                    {
-                        std::cout << HELPSTRINGS.at(COMMANDS.at(args[1])) << std::endl << std::endl;
-                    } catch(std::out_of_range){
-                    std::cout << "Unknown command.";
-                    }
-                }
-                break;
-            }
-            case Commands::CD:
-            {
-                SendStringToServer_(std::to_string(args.size()));
-                SendStringToServer_(command);
-                state_ = ClientState::WAITFORRESULT;
+                return false;
                 break;
             }
         }
-    } catch(std::out_of_range){
-        std::cout << "Unknown command.";
     }
-    return;
+    catch(...){
+        return false;
+    }
+    return false;
 }

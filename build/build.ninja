@@ -187,7 +187,7 @@ build client/CMakeFiles/client.dir/ClientClass.cpp.o: CXX_COMPILER__client_Debug
 
 build client/client: CXX_EXECUTABLE_LINKER__client_Debug client/CMakeFiles/client.dir/main.cpp.o client/CMakeFiles/client.dir/ClientClass.cpp.o | /usr/lib/x86_64-linux-gnu/libboost_thread.a /usr/lib/x86_64-linux-gnu/libboost_filesystem.a /usr/local/lib/libglog.so.0.8.0 /usr/lib/x86_64-linux-gnu/libboost_atomic.a /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2
   FLAGS = -g
-  LINK_LIBRARIES = -Wl,-rpath,/usr/local/lib  /usr/lib/x86_64-linux-gnu/libboost_thread.a  /usr/lib/x86_64-linux-gnu/libboost_filesystem.a  /usr/local/lib/libglog.so.0.8.0  /usr/lib/x86_64-linux-gnu/libboost_atomic.a  /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2  -lpthread
+  LINK_LIBRARIES = -Wl,-rpath,/usr/local/lib  /usr/lib/x86_64-linux-gnu/libboost_thread.a  /usr/lib/x86_64-linux-gnu/libboost_filesystem.a  /usr/local/lib/libglog.so.0.8.0  -lconfig++  /usr/lib/x86_64-linux-gnu/libboost_atomic.a  /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2  -lpthread
   OBJECT_DIR = client/CMakeFiles/client.dir
   POST_BUILD = :
   PRE_LINK = :

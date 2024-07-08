@@ -22,7 +22,7 @@ public:
 private:
     void WorkWithClient_();
 
-    void ParseCommand_(const size_t argsCount);
+    void ParseCommand_(const std::string command);
 
     std::string GetStringFromClient_();
     std::string GetPieceFromClient_();
@@ -30,16 +30,19 @@ private:
     std::string GetArgsFromClient_(size_t countOfArgs);
     size_t GetCountOfArgsFromClient_();
 
-    std::string ExecuteSystemCommandAndGetResult_(std::string command);
+    std::string ExecuteSystemCommandAndGetResult_(const std::string command);
 
     void SendStringToClient_(std::string message);
     void SendPieceToClient_(std::string message);
+
+    std::string GetAbsolutePath_(const std::string path);
 
     ClientState state_ = ClientState::LOGIN;
     ServerClass* parent_;
     int socket_;
     std::string name_;
     std::string clientCD_ = std::filesystem::current_path().string();
+    bool canWrite_ = true;
 
     boost::thread workingThread_;
     uint16_t port_;

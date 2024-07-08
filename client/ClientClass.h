@@ -23,7 +23,7 @@ namespace CSA
         std::string GetStringFromServer_();
         std::string GetPieceFromServer_();
 
-        void ParseCommand_(const std::string command);
+        bool IsSpecCommand_(const std::string command);
 
         std::string IP_;
         uint16_t port_;

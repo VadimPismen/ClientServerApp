@@ -30,11 +30,14 @@ include_directories(${Boost_INCLUDE_DIRS})
  
 find_package (glog 0.7.1 REQUIRED)
 
-find_package(libconfig++ REQUIRED)
-
 add_executable (${PROJECT} ${SOURCES} ${HEADERS})
  
 target_link_libraries (${PROJECT} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})
 target_link_libraries (${PROJECT} glog::glog)
-target_link_libraries(${PROJECT} ${LIBCONFIG_LIBRARIES})
-include_directories(${PROJECT} ${LIBCONFIG_INCLUDE_DIR})
+
+find_package(libconfig REQUIRED)
+find_package(libconfig++ REQUIRED)
+if (LIBCONFIG_FOUND)
+    target_link_libraries(${PROJECT} config++)
+    include_directories(${PROJECT} ${LIBCONFIG_INCLUDE_DIR})
+endif()
