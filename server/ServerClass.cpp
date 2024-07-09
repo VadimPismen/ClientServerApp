@@ -11,6 +11,7 @@ ServerClass::ServerClass(std::string cfgFile): cfgFile_(cfgFile){
 
 ServerClass::~ServerClass(){
     close(serverSocket_);
+    adminCommandsThread_.interrupt();
 }
 
 void ServerClass::OpenServer(){
@@ -31,8 +32,9 @@ void ServerClass::OpenServer(){
         perror("Bind error: ");
         exit(1);
     }
-    std::cout << "Server is opened on " << inet_ntoa(addr_.sin_addr) << ':' << port_;
+    std::cout << "Server is opened on " << inet_ntoa(addr_.sin_addr) << ':' << port_ << std::endl;
     LOG(INFO) << "Server is opened on " << inet_ntoa(addr_.sin_addr) << ':' << port_;
+    adminCommandsThread_ = boost::thread(&ServerClass::GetAdminCommands_, this);
     while(true){
         listen(serverSocket_, SOMAXCONN);
         int sock = accept(serverSocket_, NULL, NULL);
@@ -40,6 +42,30 @@ void ServerClass::OpenServer(){
             listOfClients_.try_emplace(sock);
             listOfClients_[sock].StartWorking(sock, this);
         }
+    }
+}
+
+void ServerClass::GetAdminCommands_(){
+    try{
+        while (true){
+            boost::this_thread::interruption_point();
+            std::string command;
+            std::getline(std::cin, command);
+            if (command == "users"){
+                for(auto& user : listOfClients_){
+                    std::cout << user.first << " " << user.second.getIP() << " " << user.second.getName() << std::endl;
+                }
+                continue;
+            }
+            if (command == "stop"){
+                this->~ServerClass();
+                exit(0);
+                return;
+            }
+        }
+    }
+    catch(boost::thread_interrupted){
+        return;
     }
 }
 

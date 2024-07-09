@@ -22,7 +22,10 @@ namespace CSA
         
 
     private:
-        
+
+        void GetAdminCommands_();
+        boost::thread adminCommandsThread_;
+
         std::string cfgFile_;
         libconfig::Config cfg_;
 

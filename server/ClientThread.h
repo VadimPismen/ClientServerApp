@@ -16,6 +16,8 @@ public:
     ~ClientThread();
 
     void StartWorking(int socket, ServerClass* parent);
+    std::string getIP() const { return IP_;};
+    std::string getName() const { return name_;};
 
     class ConnectionLostException{};
 
@@ -34,6 +36,7 @@ private:
 
     void SendStringToClient_(std::string message);
     void SendPieceToClient_(std::string message);
+    void SendBytesToClient_(char* buffer);
 
     std::string GetAbsolutePath_(const std::string path);
 

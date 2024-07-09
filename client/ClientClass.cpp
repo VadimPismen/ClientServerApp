@@ -101,16 +101,34 @@ void ClientClass::StartConnection() {
                 std::string dir = GetStringFromServer_();
                 if (dir == ENDOFRES){
                     std::cout << filename << std::endl;
+                    state_ = ClientState::IDLE;
                     break;
                 }
-                if (dir == DEFDIR){
+                if (dir == ""){
                     dir = "loads";
                 }
-                std::ofstream loadedFile(dir + "\\" + filename);
+                std::ofstream loadedFile(dir + "/" + filename, std::ios_base::binary);
                 if (loadedFile.fail()){
                     SendStringToServer_(BADRES);
-                    std::cout << "Bad directory";
+                    std::cout << "Bad directory" << std::endl;
+                    loadedFile.close();
+                    state_ = ClientState::IDLE;
                     break;
+                }
+                else{
+                    SendStringToServer_(SUCCESS);
+                    ssize_t countOfByteBlocks = std::stoull(GetPieceFromServer_());
+                    ssize_t sizeOfByteTail = std::stoull(GetPieceFromServer_());
+                    char data[BUFFSIZE];
+                    for (ssize_t i = 1; i < countOfByteBlocks; i++){
+                        GetBytesFromServerToCharArray_(data);
+                        loadedFile.write(data,BUFFSIZE);
+                    }
+                    GetBytesFromServerToCharArray_(data);
+                    loadedFile.write(data,sizeOfByteTail);
+                    loadedFile.close();
+                    std::cout << "File is loaded to " << dir + "/" + filename << std::endl;
+                    state_ = ClientState::IDLE;
                 }
                 break;
             }
@@ -195,6 +213,14 @@ std::string ClientClass::GetPieceFromServer_(){
             throw ConnectionLostException();
         }
     return std::string(buffer);
+}
+
+ssize_t ClientClass::GetBytesFromServerToCharArray_(char* buffer){
+    ssize_t countOfData = recv(socket_, buffer, CSA::BUFFSIZE, MSG_NOSIGNAL);
+        if (countOfData < 0){
+            throw ConnectionLostException();
+        }
+    return countOfData;
 }
 
 bool ClientClass::IsSpecCommand_(const std::string command){

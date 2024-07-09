@@ -22,6 +22,7 @@ namespace CSA
 
         std::string GetStringFromServer_();
         std::string GetPieceFromServer_();
+        ssize_t GetBytesFromServerToCharArray_(char* buffer);
 
         bool IsSpecCommand_(const std::string command);
 

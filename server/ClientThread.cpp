@@ -125,6 +125,28 @@ void ClientThread::SendStringToClient_(const std::string message){
     }
 }
 
+// void ClientThread::SendFileToClient_(std::ifstream file){
+//     file.seekg(0, std::ios_base::end);
+//     ssize_t sizeOfData = file.tellg();
+//     file.seekg(0);
+//     ssize_t countOfByteBlocks = sizeOfData / CSA::BUFFSIZE;
+//     if (sizeOfData % CSA::BUFFSIZE != 0){
+//         countOfByteBlocks++;
+//     }
+//     SendPieceToClient_(std::to_string(countOfByteBlocks) + '\n');
+//     char buffer[BUFFSIZE];
+//     for (ssize_t i = 0; i < countOfFileBlocks; i++){
+//         file.read(buffer, BUFFSIZE);
+        
+//     }
+// }
+
+void ClientThread::SendBytesToClient_(char* buffer){
+    if (send(socket_, buffer, CSA::BUFFSIZE, MSG_NOSIGNAL) < 0){
+        throw ConnectionLostException();
+    }
+}
+
 std::string ClientThread::GetStringFromClient_(){
     std::string signature = GetPieceFromClient_();
     if (signature != SIGN){
@@ -197,9 +219,22 @@ void ClientThread::ParseCommand_(const std::string command){
             }
             case Commands::CD:
             {
+                std::string secondArg;
                 try{
-                    std::string secondArg = command.substr(3);
+                    secondArg = command.substr(3);
+                }
+                catch(...){
+                    SendStringToClient_(clientCD_);
+                    SendStringToClient_(ENDOFRES);
+                    break;
+                }
+                try{
                     std::string absNewPath = GetAbsolutePath_(secondArg);
+                    if (!boost::filesystem::is_directory(boost::filesystem::path(absNewPath))){
+                        SendStringToClient_("This is not a directory!");
+                        SendStringToClient_(ENDOFRES);
+                        break;
+                    }
                     if (access(absNewPath.c_str(), R_OK) == 0){
                         if (access(absNewPath.c_str(), W_OK) == 0){
                             canWrite_ = true;
@@ -215,11 +250,13 @@ void ClientThread::ParseCommand_(const std::string command){
                     else{
                         SendStringToClient_(NOACCESSTO + DIRECTORY);
                         SendStringToClient_(ENDOFRES);
+                        break;
                     }
                 }
                 catch(...){
-                    SendStringToClient_(clientCD_);
+                    SendStringToClient_("This directory does not exist.");
                     SendStringToClient_(ENDOFRES);
+                    break;
                 }
                 break;
             }
@@ -233,13 +270,24 @@ void ClientThread::ParseCommand_(const std::string command){
             case Commands::LOADFILE:
             {
                 size_t begOfFilePath = command.find('"');
+                if (begOfFilePath == std::string::npos){
+                    SendStringToClient_("Where is \"?");
+                    SendStringToClient_(ENDOFRES);
+                    break;
+                }
                 size_t endOfFilePath = command.find('"', begOfFilePath + 1) - 1;
+                if (endOfFilePath == std::string::npos){
+                    SendStringToClient_("Where is the second \"?");
+                    SendStringToClient_(ENDOFRES);
+                    break;
+                }
                 if (begOfFilePath < endOfFilePath){
-                    std::string filePath = command.substr(begOfFilePath, endOfFilePath - begOfFilePath);
-                    std::ifstream file(GetAbsolutePath_(filePath));
+                    std::string filePath = command.substr(begOfFilePath + 1, endOfFilePath - begOfFilePath);
+                    std::ifstream file(GetAbsolutePath_(filePath), std::ios_base::binary);
                     if (!file.is_open()){
                         SendStringToClient_("Cannot open the file.");
                         SendStringToClient_(ENDOFRES);
+                        break;
                     }
                     else{
                         std::string fileName = boost::filesystem::path(filePath).filename().string();
@@ -249,13 +297,37 @@ void ClientThread::ParseCommand_(const std::string command){
                             SendStringToClient_(saveDir);
                         }
                         catch(...){
-                            SendStringToClient_(DEFDIR);
+                            SendStringToClient_("");
+                        }
+                        if (GetStringFromClient_() == SUCCESS){
+                            file.seekg(0, std::ios_base::end);
+                            ssize_t sizeOfData = file.tellg();
+                            file.seekg(0);
+                            ssize_t countOfByteBlocks = sizeOfData / CSA::BUFFSIZE;
+                            ssize_t sizeOfByteTail = sizeOfData % CSA::BUFFSIZE;
+                            if (sizeOfByteTail != 0){
+                                countOfByteBlocks++;
+                            }
+                            SendPieceToClient_(std::to_string(countOfByteBlocks));
+                            SendPieceToClient_(std::to_string(sizeOfByteTail));
+                            char fileBuf[BUFFSIZE];
+                            for (ssize_t i = 0; i < countOfByteBlocks; i++){
+                                file.read(fileBuf, BUFFSIZE);
+                                SendBytesToClient_(fileBuf);
+                            }
+                            file.close();
+                            break;
+                        }
+                        else{
+                            file.close();
+                            break;
                         }
                     }
                 }
                 else{
                     SendStringToClient_("Empty file name.");
                     SendStringToClient_(ENDOFRES);
+                    break;
                 }
                 break;
             }
@@ -274,43 +346,9 @@ void ClientThread::ParseCommand_(const std::string command){
     return;
 }
 
-
-
-// void ClientThread::ParseCommand_(const size_t argsCount){
-//     std::vector<std::string> args;
-//     std::string fullCommand;
-//     for (size_t i = 0; i < argsCount; i++){
-//         std::string arg = GetStringFromClient_();
-//         fullCommand += arg;
-//         args.push_back(arg);
-//     }
-//     const Commands com = COMMANDS.at(args[0]);
-//     switch(com)
-//     {
-//         case Commands::EXIT:
-//         {
-//             state_ = ClientState::EXIT;
-//             break;
-//         }
-//         case Commands::CD:
-//         {
-//             if (argsCount > 1){
-//                 SendStringToClient_(ExecuteSystemCommandAndGetResult_(fullCommand));
-//             }
-//             else{
-//                 SendStringToClient_(clientCD_);
-//             }
-//             break;
-//         }
-//         default:
-//             break;
-//     }
-//     return;
-// }
-
 std::string ClientThread::ExecuteSystemCommandAndGetResult_(const std::string command){
     std::string result = "";
-    FILE* pipe = popen(("cd" + clientCD_ + "; " + command).c_str(), "r");
+    FILE* pipe = popen(("cd " + clientCD_ + "; " + command).c_str(), "r");
     if (!pipe){
         return BADRES;
     }
@@ -358,3 +396,4 @@ std::string ClientThread::GetAbsolutePath_(std::string path){
         return boost::filesystem::canonical(newPath, basePath).string();
     }
 }
+

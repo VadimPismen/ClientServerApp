@@ -21,6 +21,7 @@
 namespace CSA
 {
     const size_t BUFFSIZE = 1024;
+    const ssize_t FILEBLOCKSIZE = 4096;
     const std::string SIGN = "CSA";
     const std::string SUCCESS = "SUCCESS";
     const std::string GETOUT = "GETOUT";
@@ -54,7 +55,7 @@ namespace CSA
         {"exit", Commands::EXIT},
         {"cd", Commands::CD},
         {"savedir", Commands::SAVEDIR},
-        {"loadfile", Commands::LOADFILE}
+        {"load", Commands::LOADFILE}
     };
 
     const std::map<Commands, std::string> HELPSTRINGS
@@ -65,7 +66,7 @@ help <name of command> - help on a specific command;"},
         {Commands::CD, "cd - show current directory;\n\
 cd <absolute or relative path> - change current directory;"},
         {Commands::SAVEDIR, "savedir - save current directory on account;"},
-        {Commands::LOADFILE, "loadfile \"path to file\" - load file to folder \"Downloads\";\n\
+        {Commands::LOADFILE, "load \"path to file\" - load file to folder \"Downloads\";\n\
 loadfile \"path to file\" <downloads folder> - load file from server to downloads folder."}
     };
 }
