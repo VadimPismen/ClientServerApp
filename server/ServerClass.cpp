@@ -22,7 +22,7 @@ void ServerClass::OpenServer(){
         perror("Socket creation error: ");
         exit(1);
     }
-
+    
     addr_.sin_family = AF_INET;
     addr_.sin_port = htons(port_);
     addr_.sin_addr.s_addr = htonl(INADDR_ANY);

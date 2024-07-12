@@ -9,6 +9,7 @@ ClientClass::ClientClass(std::string IP, uint16_t port): IP_(IP), port_(port){
 
 ClientClass::~ClientClass(){
     close(port_);
+    exit(0);
 }
 
 void ClientClass::StartConnection() {
@@ -31,122 +32,50 @@ void ClientClass::StartConnection() {
 
     try{
         while(true){
-            switch (state_)
-            {
-            case ClientState::LOGIN:
-            {
+            std::cout << "Login: ";
+            login_ = WriteSendGetString_();
+
+            std::cout << "Password: ";
+            WriteSendGetString_();
+
+            MessageObject recv = MessageObject::RecvMessageObject(socket_);
+            
+            if (recv.getSignature() == SUCCESS){
+                std::cout << "Successful login!" << std::endl;
+                LOG(INFO) << "Successful login as " << login_;
                 while(true){
-                    std::cout << "Login: ";
-                    login_ = WriteAndSendToServer_();
-
-                    std::cout << "Password: ";
-                    WriteAndSendToServer_();
-
-                    std::string result = GetStringFromServer_();
-                    
-                    if (result == SUCCESS){
-                        std::cout << "Successful login!" << std::endl;
-                        LOG(INFO) << "Successful login as " << login_;
-                        std::string result;
-                        while(result != ENDOFRES){
-                            std::cout << result << std::endl;
-                            result = GetStringFromServer_();
-                        }
-                        state_ = ClientState::IDLE;
+                    MessageObject result = MessageObject::RecvMessageObject(socket_);
+                    std::cout << result.getMessage() << std::endl;
+                    if (result.getSignature() == SUCCESS){
                         break;
-                    }
-                    else{
-                        if (result != GETOUT){
-                            std::cout << result << std::endl << std::endl;
-                            LOG(INFO) << "Unsuccessful attempt.";
-                        }
-                        else{
-                            throw KickedException();
-                        }
-                    }
+                    };
                 }
                 break;
             }
-            case ClientState::EXIT:
-            {
-                LOG(INFO) << "Exiting...";
-                this->~ClientClass();
-                return;
-                break;
-            }
-            case ClientState::IDLE:
-            {
-
-                std::string command = WriteString_();
-                SendStringToServer_(command);
-                if (IsSpecCommand_(command)){
-                    break;
-                }
-                std::string result = GetStringFromServer_();
-                if (result == GOODBYE){
-                    LOG(INFO) << "Exiting...";
-                    this->~ClientClass();
-                    return;
-                    break;
-                }
-                while(result != ENDOFRES){
-                    std::cout << result << std::endl;
-                    result = GetStringFromServer_();
-                }
-                break;
-            }
-            case ClientState::LOADFILE:
-            {
-                std::string filename = GetStringFromServer_();
-                std::string dir = GetStringFromServer_();
-                if (dir == ENDOFRES){
-                    std::cout << filename << std::endl;
-                    state_ = ClientState::IDLE;
-                    break;
-                }
-                if (dir == ""){
-                    dir = "loads";
-                }
-                std::ofstream loadedFile(dir + "/" + filename, std::ios_base::binary);
-                if (loadedFile.fail()){
-                    SendStringToServer_(BADRES);
-                    std::cout << "Bad directory" << std::endl;
-                    loadedFile.close();
-                    state_ = ClientState::IDLE;
-                    break;
+            else{
+                if (recv.getSignature() != GETOUT){
+                    std::cout << recv.getMessage() << std::endl << std::endl;
+                    LOG(INFO) << "Unsuccessful attempt.";
                 }
                 else{
-                    SendStringToServer_(SUCCESS);
-                    ssize_t countOfByteBlocks = std::stoull(GetPieceFromServer_());
-                    ssize_t sizeOfByteTail = std::stoull(GetPieceFromServer_());
-                    char data[BUFFSIZE];
-                    for (ssize_t i = 1; i < countOfByteBlocks; i++){
-                        GetBytesFromServerToCharArray_(data);
-                        loadedFile.write(data,BUFFSIZE);
-                    }
-                    GetBytesFromServerToCharArray_(data);
-                    loadedFile.write(data,sizeOfByteTail);
-                    loadedFile.close();
-                    std::cout << "File is loaded to " << dir + "/" + filename << std::endl;
-                    state_ = ClientState::IDLE;
+                    throw KickedException();
                 }
-                break;
             }
-            default:
-                break;
-            }
+        }
+        while(true){
+            ParseCommand_(WriteString_());
         }
     }
     catch(ConnectionLostException){
         LOG(ERROR) << "lost connection to server " << IP_ << ':' << port_;
         std::cout << "Connection was lost." << std::endl;
-        this->~ClientClass();
+        Disconnect_();
         return;
     }
     catch(KickedException){
         std::cout << "Alas!";
         LOG(WARNING) << "couldn't login... Disconnect.";
-        this->~ClientClass();
+        Disconnect_();
         return;
     }
 }
@@ -157,75 +86,19 @@ std::string ClientClass::WriteString_(){
     return message;
 }
 
-
-std::string ClientClass::WriteAndSendToServer_(){
+std::string ClientClass::WriteSendGetString_(){
     std::string message;
     while (message == ""){
         getline(std::cin, message);
     }
-    SendStringToServer_(message);
+    MessageObject::SendMessageObject(socket_, INFO, message);
     return message;
 }
 
-void ClientClass::SendPieceToServer_(const std::string message){
-    const char* buffer = message.c_str();
-    if (send(socket_, buffer, CSA::BUFFSIZE, MSG_NOSIGNAL) < 0){
-        throw ConnectionLostException();
-    }
-}
-
-void ClientClass::SendStringToServer_(const std::string message){
-    SendPieceToServer_(CSA::SIGN);
-    size_t sizeOfData = message.length();
-    SendPieceToServer_(std::to_string(sizeOfData) + '\n');
-    size_t countOfBlocks = sizeOfData / CSA::BUFFSIZE;
-    if (sizeOfData % CSA::BUFFSIZE != 0){
-        countOfBlocks++;
-    }
-    for (size_t i = 0; i < countOfBlocks; i++){
-        SendPieceToServer_(message.substr(i*CSA::BUFFSIZE, CSA::BUFFSIZE));
-    }
-}
-
-std::string ClientClass::GetStringFromServer_(){
-    size_t sizeOfData;
-    try{
-        sizeOfData = std::stoull(GetPieceFromServer_());
-    }
-    catch(...){
-        sizeOfData = 0;
-    }
-    std::string serverData = "";
-    size_t countOfBlocks = sizeOfData / CSA::BUFFSIZE;
-    if (sizeOfData % CSA::BUFFSIZE != 0){
-        countOfBlocks++;
-    }
-    for (size_t i = 0; i < countOfBlocks; i++){
-        serverData += GetPieceFromServer_();
-    }
-    return serverData;
-}
-
-std::string ClientClass::GetPieceFromServer_(){
-    char buffer[CSA::BUFFSIZE];
-    ssize_t countOfData = recv(socket_, &buffer, CSA::BUFFSIZE, MSG_NOSIGNAL);
-        if (countOfData < 0){
-            throw ConnectionLostException();
-        }
-    return std::string(buffer);
-}
-
-ssize_t ClientClass::GetBytesFromServerToCharArray_(char* buffer){
-    ssize_t countOfData = recv(socket_, buffer, CSA::BUFFSIZE, MSG_NOSIGNAL);
-        if (countOfData < 0){
-            throw ConnectionLostException();
-        }
-    return countOfData;
-}
-
-bool ClientClass::IsSpecCommand_(const std::string command){
+void ClientClass::ParseCommand_(const std::string &command)
+{
     if (command.empty()){
-        return false;
+        return;
     }
     std::istringstream ss(command);
     std::string firstArg;
@@ -236,19 +109,86 @@ bool ClientClass::IsSpecCommand_(const std::string command){
         {
             case Commands::LOADFILE:
             {
-                state_ = ClientState::LOADFILE;
-                return true;
+                std::smatch match;
+                std::regex_search(command, match, CSA::LOADFILEREGEX);
+                std::string serverFileAdr = match.str();
+                if (serverFileAdr.empty()){
+                    std::cout << "Address of server file must be in \"" << std::endl;
+                    break;
+                }
+                std::string clientFileName = command.substr(match.position() + serverFileAdr.length() + 1);
+                serverFileAdr.erase(0,1);
+                while (clientFileName[0] == ' '){
+                    clientFileName.erase(0, 1);
+                }
+                if (clientFileName.empty()){
+                    std::size_t begOfName = serverFileAdr.find_last_of('/');
+                    if (begOfName != std::string::npos){
+                        clientFileName = serverFileAdr.substr(begOfName + 1);
+                    }
+                    else{
+                        clientFileName = serverFileAdr;
+                    }
+                }
+                std::ofstream clientFile(loadDir_ + '/' + clientFileName);
+                if (clientFile.is_open(), std::ios_base::binary){
+                    MessageObject::SendMessageObject(socket_, INFO, firstArg + " " + serverFileAdr);
+                    MessageObject result = MessageObject::RecvMessageObject(socket_);
+                    if (result.getSignature() == SUCCESS){
+                        while(true){
+                            result = MessageObject::RecvMessageObject(socket_);
+                            if (result.getSignature() == LOAD){
+                                clientFile.write(result.getBytes().data(), result.getsizeOfMessage());
+                            }
+                            else
+                            {
+                                std::cout << "File was loaded to " << loadDir_ + '/' + clientFileName << std::endl;
+                                clientFile.close();
+                                break;
+                            }
+                        }
+                    }
+                    else{
+                        std::cout << result.getMessage() << std::endl;
+                        clientFile.close();
+                        break;
+                    }
+                }
+                else{
+                    std::cout << "Cannot create file!" << std::endl;
+                }
+                break;
+            }
+            case Commands::EXIT:
+            {
+                MessageObject::SendMessageObject(socket_, INFO, command);
+                std::cout << "Exiting..." << std::endl;
+                LOG(INFO) << "Exiting...";
+                Disconnect_();
+                return;
                 break;
             }
             default:
             {
-                return false;
+                MessageObject::SendMessageObject(socket_, INFO, command);
+                while(true){
+                    MessageObject result = MessageObject::RecvMessageObject(socket_);
+                    std::cout << result.getMessage() << std::endl;
+                    if (result.getSignature() == SUCCESS){
+                        break;
+                    };
+                }
                 break;
             }
         }
     }
     catch(...){
-        return false;
+        return;
     }
-    return false;
+    return;
+}
+
+inline void ClientClass::Disconnect_(){
+    this->~ClientClass();
+    return;
 }

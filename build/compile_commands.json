@@ -23,5 +23,10 @@
   "directory": "/home/vadim/repos/ClientServerApp/ClientServerApp/build",
   "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/ClientServerApp/client/client -g -o client/CMakeFiles/client.dir/ClientClass.cpp.o -c /home/vadim/repos/ClientServerApp/ClientServerApp/client/ClientClass.cpp",
   "file": "/home/vadim/repos/ClientServerApp/ClientServerApp/client/ClientClass.cpp"
+},
+{
+  "directory": "/home/vadim/repos/ClientServerApp/ClientServerApp/build",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/ClientServerApp/debug/debug -g -o debug/CMakeFiles/debug.dir/main.cpp.o -c /home/vadim/repos/ClientServerApp/ClientServerApp/debug/main.cpp",
+  "file": "/home/vadim/repos/ClientServerApp/ClientServerApp/debug/main.cpp"
 }
 ]
