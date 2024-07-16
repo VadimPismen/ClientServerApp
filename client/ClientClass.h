@@ -10,25 +10,26 @@ namespace CSA
 
         void StartConnection();
 
-        class ConnectionLostException{};
         class KickedException{};
 
     private:
 
-        std::string WriteAndSendToServer_();
-        void SendStringToServer_(const std::string message);
-        void SendPieceToServer_(const std::string message);
+        std::string WriteSendGetString_();
+
         std::string WriteString_();
 
-        std::string GetStringFromServer_();
-        std::string GetPieceFromServer_();
-        ssize_t GetBytesFromServerToCharArray_(char* buffer);
+        void ParseCommand_(const std::string &command);
+        inline void Disconnect_();
 
-        bool IsSpecCommand_(const std::string command);
+        std::string GetAbsolutePath_(const std::string path);
 
         std::string IP_;
         uint16_t port_;
         std::string login_;
+
+        std::string cfgFile_;
+        libconfig::Config cfg_;
+        std::string loadDir_ = std::filesystem::current_path().string() + "/" + DEFDIR;
 
         ClientState state_ = ClientState::LOGIN;
         int socket_;

@@ -25,159 +25,72 @@ void ClientThread::StartWorking(int socket, ServerClass* parent){
 
 void ClientThread::WorkWithClient_(){
     try{
+        {
+        unsigned char attempts = 3;
+        std::string login;
+        std::string password;
         while(true){
-            switch (state_)
-            {
-            case ClientState::LOGIN:
-            {
-                unsigned char attempts = 3;
-                    while(true){
-                    if (LogIn_()){
-                        SendStringToClient_(SUCCESS);
-                        LOG(INFO) << IP_ << ':' << port_ << " is " << name_;
-                        std::string dir = parent_->GetUserDirFromConfs(name_);
-                        if (access(dir.c_str(), R_OK) == 0){
-                            if (access(dir.c_str(), W_OK) == 0){
-                                canWrite_ = true;
-                            }
-                            else{
-                                canWrite_ = false;
-                                SendStringToClient_("You can only read.");
-                            }
-                            clientCD_ = dir;
-                            SendStringToClient_("Current path: " + dir);
-                        }
-                        else{
-                            SendStringToClient_("Old path " + dir + " is not available.");
-                            SendStringToClient_("Current path: " + clientCD_);
-                        }
-                        SendStringToClient_(ENDOFRES);
-                        state_ = ClientState::IDLE;
-                        break;
+            login = MessageObject::RecvMessageObject(socket_).getMessage();
+            password = MessageObject::RecvMessageObject(socket_).getMessage();
+            if (parent_->LookForAccount(login, password)){
+                name_ = login;
+                MessageObject::SendMessageObject(socket_, SUCCESS);
+                LOG(INFO) << IP_ << ':' << port_ << " is " << name_;
+                std::string dir = parent_->GetUserDirFromConfs(name_);
+                if (access(dir.c_str(), R_OK) == 0){
+                    if (access(dir.c_str(), W_OK) == 0){
+                        canWrite_ = true;
                     }
                     else{
-                        attempts--;
-                        if (attempts){
-                            SendStringToClient_(std::to_string(attempts) + " attempts left.");
-                            LOG(INFO) << IP_ << ':' << port_ << ": unsuccessful login attempt.";
-                        }
-                        else{
-                            SendStringToClient_(GETOUT);
-                            LOG(WARNING) << IP_ << ':' << port_ << ": couldn't login. Kicked!";
-                            parent_->DeleteClient(socket_);
-                            return;
-                        }
+                        canWrite_ = false;
+                        MessageObject::SendMessageObject(socket_, INFO, "You can only read.");
                     }
+                    clientCD_ = dir;
+                    MessageObject::SendMessageObject(socket_, SUCCESS, "Current path: " + dir);
+                }
+                else{
+                    MessageObject::SendMessageObject(socket_, INFO, "Old path " + dir + " is not available.");
+                    MessageObject::SendMessageObject(socket_, SUCCESS, "Current path: " + clientCD_);
                 }
                 break;
             }
-            case ClientState::EXIT:
-            {
-                LOG(INFO) << name_ << '(' << IP_ << ':' << port_ << ") left.";
-                parent_->DeleteClient(socket_);
-                break;
-            }
-            case ClientState::IDLE:
-            {
-                ParseCommand_(GetStringFromClient_());
-                break;
-            }
-            default:
-                break;
+            else{
+                attempts--;
+                if (attempts){
+                    MessageObject::SendMessageObject(socket_, INFO, std::to_string(attempts) + " attempts left.");
+                    LOG(INFO) << IP_ << ':' << port_ << ": unsuccessful login attempt.";
+                }
+                else{
+                    MessageObject::SendMessageObject(socket_, GETOUT);
+                    LOG(WARNING) << IP_ << ':' << port_ << ": couldn't login. Kicked!";
+                    parent_->DeleteClient(socket_);
+                    return;
+                }
             }
         }
+        }
+        while(true){
+            ParseCommand_(MessageObject::RecvMessageObject(socket_).getMessage());
+        }
     }
-    catch(...){
-        LOG(WARNING) << "lost connection to " << IP_ << ':' << port_;
-        parent_->DeleteClient(socket_);
+    catch(ConnectionLostException){
+        DisconnectClient_();
         return;
     }
 }
 
-bool ClientThread::LogIn_(){
-    std::string login = GetStringFromClient_();
-    std::string password = GetStringFromClient_();
-    if (parent_->LookForAccount(login, password)){
-        name_ = login;
-        return true;
-    }
-    else{
-        return false;
-    }
+void ClientThread::DisconnectClient_()
+{
+    LOG(INFO) << name_ << '(' << IP_ << ':' << port_ << ") left.";
+    parent_->DeleteClient(socket_);
+    return;
 }
 
-void ClientThread::SendPieceToClient_(const std::string message){
-    const char* buffer = message.c_str();
-    if (send(socket_, buffer, CSA::BUFFSIZE, MSG_NOSIGNAL) < 0){
-        throw ConnectionLostException();
-    }
-}
-
-void ClientThread::SendStringToClient_(const std::string message){
-    size_t sizeOfData = message.length();
-    SendPieceToClient_(std::to_string(sizeOfData) + '\n');
-    size_t countOfBlocks = sizeOfData / CSA::BUFFSIZE;
-    if (sizeOfData % CSA::BUFFSIZE != 0){
-        countOfBlocks++;
-    }
-    for (size_t i = 0; i < countOfBlocks; i++){
-        SendPieceToClient_(message.substr(i*CSA::BUFFSIZE, CSA::BUFFSIZE));
-    }
-}
-
-// void ClientThread::SendFileToClient_(std::ifstream file){
-//     file.seekg(0, std::ios_base::end);
-//     ssize_t sizeOfData = file.tellg();
-//     file.seekg(0);
-//     ssize_t countOfByteBlocks = sizeOfData / CSA::BUFFSIZE;
-//     if (sizeOfData % CSA::BUFFSIZE != 0){
-//         countOfByteBlocks++;
-//     }
-//     SendPieceToClient_(std::to_string(countOfByteBlocks) + '\n');
-//     char buffer[BUFFSIZE];
-//     for (ssize_t i = 0; i < countOfFileBlocks; i++){
-//         file.read(buffer, BUFFSIZE);
-        
-//     }
-// }
-
-void ClientThread::SendBytesToClient_(char* buffer){
-    if (send(socket_, buffer, CSA::BUFFSIZE, MSG_NOSIGNAL) < 0){
-        throw ConnectionLostException();
-    }
-}
-
-std::string ClientThread::GetStringFromClient_(){
-    std::string signature = GetPieceFromClient_();
-    if (signature != SIGN){
-        LOG(WARNING) << IP_ << ':' << port_ << " kicked out as an outsider!";
-        this->~ClientThread();
-    }
-    size_t sizeOfData;
-    try{
-        sizeOfData = std::stoull(GetPieceFromClient_());
-    }
-    catch(...){
-        sizeOfData = 0;
-    }
-    std::string clientData = "";
-    size_t countOfBlocks = sizeOfData / CSA::BUFFSIZE;
-    if (sizeOfData % CSA::BUFFSIZE != 0){
-        countOfBlocks++;
-    }
-    for (size_t i = 0; i < countOfBlocks; i++){
-        clientData += GetPieceFromClient_();
-    }
-    return clientData;
-}
-
-std::string ClientThread::GetPieceFromClient_(){
-    char buffer[CSA::BUFFSIZE];
-    ssize_t countOfData = recv(socket_, &buffer, CSA::BUFFSIZE, MSG_NOSIGNAL);
-        if (countOfData < 0){
-            throw ConnectionLostException();
-        }
-    return std::string(buffer);
+void ClientThread::LostConnection_()
+{
+    LOG(WARNING) << "lost connection to " << IP_ << ':' << port_;
+    parent_->DeleteClient(socket_);
+    return;
 }
 
 void ClientThread::ParseCommand_(const std::string command){
@@ -190,9 +103,7 @@ void ClientThread::ParseCommand_(const std::string command){
         {
             case Commands::EXIT:
             {
-                SendStringToClient_(GOODBYE);
-                state_ = ClientState::EXIT;
-                LOG(INFO) << IP_ << ':' << port_ << " disconnected.";
+                DisconnectClient_();
                 break;
             }
             case Commands::HELP:
@@ -201,20 +112,19 @@ void ClientThread::ParseCommand_(const std::string command){
                 ss >> secondArg;
                 if (!secondArg.empty()){
                     try{
-                        SendStringToClient_(HELPSTRINGS.at(COMMANDS.at(secondArg)));
+                        MessageObject::SendMessageObject(socket_, SUCCESS, HELPSTRINGS.at(COMMANDS.at(secondArg)));
                     }
                     catch(...)
                     {
-                        SendStringToClient_(UNDEFCOM + secondArg);
+                        MessageObject::SendMessageObject(socket_, SUCCESS, UNDEFCOM + secondArg);
                     }
                 }
                 else{
-                    std::string result;
                     for(auto& helpStr : HELPSTRINGS){
-                        SendStringToClient_(helpStr.second);
+                        MessageObject::SendMessageObject(socket_, INFO, helpStr.second);
                     }
+                    MessageObject::SendMessageObject(socket_, SUCCESS);
                 }
-                SendStringToClient_(ENDOFRES);
                 break;
             }
             case Commands::CD:
@@ -224,38 +134,39 @@ void ClientThread::ParseCommand_(const std::string command){
                     secondArg = command.substr(3);
                 }
                 catch(...){
-                    SendStringToClient_(clientCD_);
-                    SendStringToClient_(ENDOFRES);
+                    MessageObject::SendMessageObject(socket_, SUCCESS, clientCD_);
                     break;
                 }
                 try{
                     std::string absNewPath = GetAbsolutePath_(secondArg);
-                    if (!boost::filesystem::is_directory(boost::filesystem::path(absNewPath))){
-                        SendStringToClient_("This is not a directory!");
-                        SendStringToClient_(ENDOFRES);
+                    boost::filesystem::path path(absNewPath);
+                    if (!boost::filesystem::exists(path)){
+                        MessageObject::SendMessageObject(socket_, SUCCESS, "This directory does not exist!");
                         break;
                     }
+                    if (!boost::filesystem::is_directory(path)){
+                        MessageObject::SendMessageObject(socket_, SUCCESS, "This is not a directory!");
+                        break;
+                    }
+                    std::string result = "";
                     if (access(absNewPath.c_str(), R_OK) == 0){
                         if (access(absNewPath.c_str(), W_OK) == 0){
                             canWrite_ = true;
                         }
                         else{
                             canWrite_ = false;
-                            SendStringToClient_("You can only read.");
+                            MessageObject::SendMessageObject(socket_, INFO, "You can only read.");
                         }
                         clientCD_ = absNewPath;
-                        SendStringToClient_("Current path: " + absNewPath);
-                        SendStringToClient_(ENDOFRES);
+                        MessageObject::SendMessageObject(socket_, SUCCESS, "Current path: " + absNewPath);
                     }
                     else{
-                        SendStringToClient_(NOACCESSTO + DIRECTORY);
-                        SendStringToClient_(ENDOFRES);
+                        MessageObject::SendMessageObject(socket_, SUCCESS, NOACCESSTO + DIRECTORY);
                         break;
                     }
                 }
                 catch(...){
-                    SendStringToClient_("This directory does not exist.");
-                    SendStringToClient_(ENDOFRES);
+                    MessageObject::SendMessageObject(socket_, SUCCESS, "This directory does not exist.");
                     break;
                 }
                 break;
@@ -263,85 +174,135 @@ void ClientThread::ParseCommand_(const std::string command){
             case Commands::SAVEDIR:
             {
                 parent_->SaveUserDir(name_, clientCD_);
-                SendStringToClient_("Saved directory: " + clientCD_);
-                SendStringToClient_(ENDOFRES);
+                MessageObject::SendMessageObject(socket_, SUCCESS, "Saved directory: " + clientCD_);
+                break;
+            }
+            case Commands::PROCS:
+            {
+                std::ifstream file;
+                std::string procDir;
+                std::string procInfo;
+                for (auto const& dir_entry : std::filesystem::directory_iterator{"/proc"}){
+                    std::string allProcInfo = "";
+                    if (std::isdigit(dir_entry.path().filename().string()[0])){
+                        procDir = dir_entry.path().string();
+                        if (access(procDir.c_str(), R_OK) == 0){
+                            file.open(procDir + "/stat");
+                            if (file.is_open()){
+                                
+                                std::getline(file, procInfo, ' ');
+                                allProcInfo += procInfo + ":\n";
+
+                                std::getline(file, procInfo, ')');
+                                procInfo.erase(0, 1);
+                                allProcInfo += "\tName: " + procInfo + "\n";
+                                file.close();
+                            }
+                            else{
+                                continue;
+                            }
+                            char buf[FILEBLOCKSIZE];
+                            procInfo = "";
+                            ssize_t bytes = readlink((procDir + "/exe").c_str(), buf, FILEBLOCKSIZE);
+                            if (bytes > 0){
+                                allProcInfo += "\texe: " + std::string(buf, bytes) + "\n";
+                            }
+
+                            // bytes = readlink((procDir + "/cwd").c_str(), buf, FILEBLOCKSIZE);
+                            // if (bytes >= 0){
+                            //     allProcInfo += "\tcwd: " + std::string(buf, bytes) + "\n";
+                            // }
+                            // file.open(procDir + "/cmdline");
+                            // if (file.is_open()){
+                            //     file.read(buf, FILEBLOCKSIZE);
+                            //     if (file.gcount()){
+                            //         allProcInfo += "\tcmdline: " + std::string(buf, file.gcount()) + "\n";
+                            //     }
+                            // }
+                            // if (access((procDir + "/fd").c_str(), R_OK) == 0){
+                            //     for (auto const& descriptor : std::filesystem::directory_iterator{procDir + "/fd"}){
+                            //         struct stat fileInfo;
+                            //         char modeval [9];
+                            //         procInfo = "\t\t";
+                            //         if(stat(descriptor.path().c_str(), &fileInfo) == 0){
+                            //             mode_t perm = fileInfo.st_mode;
+                            //             modeval[0] = (perm & S_IRUSR) ? 'r' : '-';
+                            //             modeval[1] = (perm & S_IWUSR) ? 'w' : '-';
+                            //             modeval[2] = (perm & S_IXUSR) ? 'x' : '-';
+                            //             modeval[3] = (perm & S_IRGRP) ? 'r' : '-';
+                            //             modeval[4] = (perm & S_IWGRP) ? 'w' : '-';
+                            //             modeval[5] = (perm & S_IXGRP) ? 'x' : '-';
+                            //             modeval[6] = (perm & S_IROTH) ? 'r' : '-';
+                            //             modeval[7] = (perm & S_IWOTH) ? 'w' : '-';
+                            //             modeval[8] = (perm & S_IXOTH) ? 'x' : '-';
+                            //             procInfo += std::string(modeval, 9) + "\n";
+                            //         }
+                            //     }
+                            // }
+                            //         bytes = readlink((descriptor.path()).c_str(), buf, FILEBLOCKSIZE);
+                            //         if (bytes >= 0){
+                            //             allProcInfo += " " + descriptor.path().filename().string() + " -> " + std::string(buf, bytes) + "\n";
+                            //         }
+                            //     }
+                            // }
+                            MessageObject::SendMessageObject(socket_, INFO, allProcInfo);
+                        }
+                    }
+                }
+                MessageObject::SendMessageObject(socket_, SUCCESS);
                 break;
             }
             case Commands::LOADFILE:
             {
-                size_t begOfFilePath = command.find('"');
-                if (begOfFilePath == std::string::npos){
-                    SendStringToClient_("Where is \"?");
-                    SendStringToClient_(ENDOFRES);
-                    break;
-                }
-                size_t endOfFilePath = command.find('"', begOfFilePath + 1) - 1;
-                if (endOfFilePath == std::string::npos){
-                    SendStringToClient_("Where is the second \"?");
-                    SendStringToClient_(ENDOFRES);
-                    break;
-                }
-                if (begOfFilePath < endOfFilePath){
-                    std::string filePath = command.substr(begOfFilePath + 1, endOfFilePath - begOfFilePath);
-                    std::ifstream file(GetAbsolutePath_(filePath), std::ios_base::binary);
-                    if (!file.is_open()){
-                        SendStringToClient_("Cannot open the file.");
-                        SendStringToClient_(ENDOFRES);
+                std::string serverFileAdr = command.substr(firstArg.length() + 1);
+                try{
+                    boost::filesystem::path relPath(serverFileAdr);
+                    boost::filesystem::path absPath = boost::filesystem::canonical(relPath, boost::filesystem::path(clientCD_));
+                    int file = open(absPath.string().c_str(), O_RDONLY);
+                    //std::ifstream file(absPath.string(), std::ios_base::binary);
+                    if (file >= 0){
+                        MessageObject::SendMessageObject(socket_, SUCCESS);
+                        char buf[FILEBLOCKSIZE];
+                        ssize_t sizeOfBlock = 0;
+                        while(true){
+                            sizeOfBlock = read(file, buf, FILEBLOCKSIZE);
+                            if (sizeOfBlock < FILEBLOCKSIZE){
+                                if (sizeOfBlock == 0){
+                                    MessageObject::SendMessageObject(socket_, SUCCESS);
+                                }
+                                else{
+                                    MessageObject::SendMessageObject(socket_, LOAD, buf, sizeOfBlock);
+                                    MessageObject::SendMessageObject(socket_, SUCCESS);
+                                }
+                                break;
+                            }
+                            MessageObject::SendMessageObject(socket_, LOAD, buf, FILEBLOCKSIZE);
+                        }
+                        close(file);
                         break;
                     }
                     else{
-                        std::string fileName = boost::filesystem::path(filePath).filename().string();
-                        SendStringToClient_(fileName);
-                        try{
-                            std::string saveDir = command.substr(endOfFilePath + 2);
-                            SendStringToClient_(saveDir);
-                        }
-                        catch(...){
-                            SendStringToClient_("");
-                        }
-                        if (GetStringFromClient_() == SUCCESS){
-                            file.seekg(0, std::ios_base::end);
-                            ssize_t sizeOfData = file.tellg();
-                            file.seekg(0);
-                            ssize_t countOfByteBlocks = sizeOfData / CSA::BUFFSIZE;
-                            ssize_t sizeOfByteTail = sizeOfData % CSA::BUFFSIZE;
-                            if (sizeOfByteTail != 0){
-                                countOfByteBlocks++;
-                            }
-                            SendPieceToClient_(std::to_string(countOfByteBlocks));
-                            SendPieceToClient_(std::to_string(sizeOfByteTail));
-                            char fileBuf[BUFFSIZE];
-                            for (ssize_t i = 0; i < countOfByteBlocks; i++){
-                                file.read(fileBuf, BUFFSIZE);
-                                SendBytesToClient_(fileBuf);
-                            }
-                            file.close();
-                            break;
-                        }
-                        else{
-                            file.close();
-                            break;
-                        }
+                        MessageObject::SendMessageObject(socket_, INFO, "This is not a file.");
+                        break;
                     }
                 }
-                else{
-                    SendStringToClient_("Empty file name.");
-                    SendStringToClient_(ENDOFRES);
+                catch(...){
+                    MessageObject::SendMessageObject(socket_, INFO, "File does not exist.");
                     break;
                 }
                 break;
             }
             default:
             {
-                SendStringToClient_(ExecuteSystemCommandAndGetResult_(command));
-                SendStringToClient_(ENDOFRES);
+                MessageObject::SendMessageObject(socket_, SUCCESS, "Undefined command");
+                //MessageObject::SendMessageObject(socket_, SUCCESS, (ExecuteSystemCommandAndGetResult_(command)));
                 break;
             }
         }
     }
     catch(...){
-        SendStringToClient_(ExecuteSystemCommandAndGetResult_(command));
-        SendStringToClient_(ENDOFRES);
+        MessageObject::SendMessageObject(socket_, SUCCESS, "Undefined command");
+        //MessageObject::SendMessageObject(socket_, SUCCESS, (ExecuteSystemCommandAndGetResult_(command)));
     }
     return;
 }
@@ -350,7 +311,7 @@ std::string ClientThread::ExecuteSystemCommandAndGetResult_(const std::string co
     std::string result = "";
     FILE* pipe = popen(("cd " + clientCD_ + "; " + command).c_str(), "r");
     if (!pipe){
-        return BADRES;
+        return "What?";
     }
     char buffer[BUFFSIZE];
     try {
@@ -359,31 +320,10 @@ std::string ClientThread::ExecuteSystemCommandAndGetResult_(const std::string co
         }
     } catch (...) {
         pclose(pipe);
-        return BADRES;
+        return "What?";
     }
     pclose(pipe);
     return result;
-}
-
-std::string ClientThread::GetArgsFromClient_(size_t countOfArgs){
-    std::string args;
-    for (size_t i = 0; i < countOfArgs; i++){
-        args += GetStringFromClient_();
-    }
-    return args;
-}
-
-std::string ClientThread::GetArgsFromClient_(){
-    std::string args;
-    size_t countOfArgs = std::stoull(GetStringFromClient_());
-    for (size_t i = 0; i < countOfArgs; i++){
-        args += GetStringFromClient_();
-    }
-    return args;
-}
-
-size_t ClientThread::GetCountOfArgsFromClient_(){
-    return std::stoull(GetStringFromClient_());
 }
 
 std::string ClientThread::GetAbsolutePath_(std::string path){

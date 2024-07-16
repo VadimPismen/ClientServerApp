@@ -1,0 +1,57 @@
+{
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_custom_target",
+			"add_dependencies"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 8,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 9,
+				"parent" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "server::@d19778d2e34a1e3ddfc0"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "client::@b0c487aac068df482bf0"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "debug::@789cf532419e99b67093"
+		}
+	],
+	"id" : "ClientServerApp::@6890427a1f51a3e7e1df",
+	"name" : "ClientServerApp",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}
