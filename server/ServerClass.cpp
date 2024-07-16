@@ -62,6 +62,11 @@ void ServerClass::GetAdminCommands_(){
                 exit(0);
                 return;
             }
+            if (command == "clearlogs"){
+                std::filesystem::remove_all("logs");
+                std::filesystem::create_directory("logs");
+                continue;
+            }
         }
     }
     catch(boost::thread_interrupted){

@@ -141,7 +141,7 @@ void ClientThread::ParseCommand_(const std::string command){
                     std::string absNewPath = GetAbsolutePath_(secondArg);
                     boost::filesystem::path path(absNewPath);
                     if (!boost::filesystem::exists(path)){
-                        MessageObject::SendMessageObject(socket_, SUCCESS, "This directory doesnt exist!");
+                        MessageObject::SendMessageObject(socket_, SUCCESS, "This directory does not exist!");
                         break;
                     }
                     if (!boost::filesystem::is_directory(path)){
@@ -177,37 +177,108 @@ void ClientThread::ParseCommand_(const std::string command){
                 MessageObject::SendMessageObject(socket_, SUCCESS, "Saved directory: " + clientCD_);
                 break;
             }
+            case Commands::PROCS:
+            {
+                std::ifstream file;
+                std::string procDir;
+                std::string procInfo;
+                for (auto const& dir_entry : std::filesystem::directory_iterator{"/proc"}){
+                    std::string allProcInfo = "";
+                    if (std::isdigit(dir_entry.path().filename().string()[0])){
+                        procDir = dir_entry.path().string();
+                        if (access(procDir.c_str(), R_OK) == 0){
+                            file.open(procDir + "/stat");
+                            if (file.is_open()){
+                                
+                                std::getline(file, procInfo, ' ');
+                                allProcInfo += procInfo + ":\n";
+
+                                std::getline(file, procInfo, ')');
+                                procInfo.erase(0, 1);
+                                allProcInfo += "\tName: " + procInfo + "\n";
+                                file.close();
+                            }
+                            else{
+                                continue;
+                            }
+                            char buf[FILEBLOCKSIZE];
+                            procInfo = "";
+                            ssize_t bytes = readlink((procDir + "/exe").c_str(), buf, FILEBLOCKSIZE);
+                            if (bytes > 0){
+                                allProcInfo += "\texe: " + std::string(buf, bytes) + "\n";
+                            }
+
+                            // bytes = readlink((procDir + "/cwd").c_str(), buf, FILEBLOCKSIZE);
+                            // if (bytes >= 0){
+                            //     allProcInfo += "\tcwd: " + std::string(buf, bytes) + "\n";
+                            // }
+                            // file.open(procDir + "/cmdline");
+                            // if (file.is_open()){
+                            //     file.read(buf, FILEBLOCKSIZE);
+                            //     if (file.gcount()){
+                            //         allProcInfo += "\tcmdline: " + std::string(buf, file.gcount()) + "\n";
+                            //     }
+                            // }
+                            // if (access((procDir + "/fd").c_str(), R_OK) == 0){
+                            //     for (auto const& descriptor : std::filesystem::directory_iterator{procDir + "/fd"}){
+                            //         struct stat fileInfo;
+                            //         char modeval [9];
+                            //         procInfo = "\t\t";
+                            //         if(stat(descriptor.path().c_str(), &fileInfo) == 0){
+                            //             mode_t perm = fileInfo.st_mode;
+                            //             modeval[0] = (perm & S_IRUSR) ? 'r' : '-';
+                            //             modeval[1] = (perm & S_IWUSR) ? 'w' : '-';
+                            //             modeval[2] = (perm & S_IXUSR) ? 'x' : '-';
+                            //             modeval[3] = (perm & S_IRGRP) ? 'r' : '-';
+                            //             modeval[4] = (perm & S_IWGRP) ? 'w' : '-';
+                            //             modeval[5] = (perm & S_IXGRP) ? 'x' : '-';
+                            //             modeval[6] = (perm & S_IROTH) ? 'r' : '-';
+                            //             modeval[7] = (perm & S_IWOTH) ? 'w' : '-';
+                            //             modeval[8] = (perm & S_IXOTH) ? 'x' : '-';
+                            //             procInfo += std::string(modeval, 9) + "\n";
+                            //         }
+                            //     }
+                            // }
+                            //         bytes = readlink((descriptor.path()).c_str(), buf, FILEBLOCKSIZE);
+                            //         if (bytes >= 0){
+                            //             allProcInfo += " " + descriptor.path().filename().string() + " -> " + std::string(buf, bytes) + "\n";
+                            //         }
+                            //     }
+                            // }
+                            MessageObject::SendMessageObject(socket_, INFO, allProcInfo);
+                        }
+                    }
+                }
+                MessageObject::SendMessageObject(socket_, SUCCESS);
+                break;
+            }
             case Commands::LOADFILE:
             {
                 std::string serverFileAdr = command.substr(firstArg.length() + 1);
                 try{
                     boost::filesystem::path relPath(serverFileAdr);
                     boost::filesystem::path absPath = boost::filesystem::canonical(relPath, boost::filesystem::path(clientCD_));
-                    std::ifstream file(absPath.string(), std::ios_base::binary);
-                    if (file.is_open()){
+                    int file = open(absPath.string().c_str(), O_RDONLY);
+                    //std::ifstream file(absPath.string(), std::ios_base::binary);
+                    if (file >= 0){
                         MessageObject::SendMessageObject(socket_, SUCCESS);
                         char buf[FILEBLOCKSIZE];
-                        size_t sizeOfBlock = 0;
+                        ssize_t sizeOfBlock = 0;
                         while(true){
-                            file.read(buf, FILEBLOCKSIZE);
-                            sizeOfBlock = file.gcount();
+                            sizeOfBlock = read(file, buf, FILEBLOCKSIZE);
                             if (sizeOfBlock < FILEBLOCKSIZE){
                                 if (sizeOfBlock == 0){
                                     MessageObject::SendMessageObject(socket_, SUCCESS);
                                 }
                                 else{
-                                    std::vector<char> bytes = {};
-                                    std::copy(buf, &buf[sizeOfBlock], back_inserter(bytes));
-                                    MessageObject::SendMessageObject(socket_, LOAD, bytes);
+                                    MessageObject::SendMessageObject(socket_, LOAD, buf, sizeOfBlock);
                                     MessageObject::SendMessageObject(socket_, SUCCESS);
                                 }
                                 break;
                             }
-                            std::vector<char> bytes = {};
-                            std::copy(buf, &buf[sizeOfBlock], back_inserter(bytes));
-                            MessageObject::SendMessageObject(socket_, LOAD, bytes);
+                            MessageObject::SendMessageObject(socket_, LOAD, buf, FILEBLOCKSIZE);
                         }
-                        file.close();
+                        close(file);
                         break;
                     }
                     else{
@@ -223,13 +294,15 @@ void ClientThread::ParseCommand_(const std::string command){
             }
             default:
             {
-                MessageObject::SendMessageObject(socket_, SUCCESS, (ExecuteSystemCommandAndGetResult_(command)));
+                MessageObject::SendMessageObject(socket_, SUCCESS, "Undefined command");
+                //MessageObject::SendMessageObject(socket_, SUCCESS, (ExecuteSystemCommandAndGetResult_(command)));
                 break;
             }
         }
     }
     catch(...){
-        MessageObject::SendMessageObject(socket_, SUCCESS, (ExecuteSystemCommandAndGetResult_(command)));
+        MessageObject::SendMessageObject(socket_, SUCCESS, "Undefined command");
+        //MessageObject::SendMessageObject(socket_, SUCCESS, (ExecuteSystemCommandAndGetResult_(command)));
     }
     return;
 }

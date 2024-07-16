@@ -21,9 +21,14 @@ namespace CSA
         void ParseCommand_(const std::string &command);
         inline void Disconnect_();
 
+        std::string GetAbsolutePath_(const std::string path);
+
         std::string IP_;
         uint16_t port_;
         std::string login_;
+
+        std::string cfgFile_;
+        libconfig::Config cfg_;
         std::string loadDir_ = std::filesystem::current_path().string() + "/" + DEFDIR;
 
         ClientState state_ = ClientState::LOGIN;

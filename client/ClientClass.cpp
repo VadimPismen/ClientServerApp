@@ -3,8 +3,19 @@
 using namespace CSA;
 
 ClientClass::ClientClass(std::string IP, uint16_t port): IP_(IP), port_(port){
-    // cfg_.readFile("config.cfg");
-    // libconfig::Setting& root_ =  cfg_.getRoot();
+    cfg_.readFile("config.cfg");
+    libconfig::Setting& root_ =  cfg_.getRoot();
+    libconfig::Setting& newLoadDirSet =  root_.lookup("loadDir");
+    std::string newLoadDir = newLoadDirSet;
+    if (std::filesystem::is_directory(newLoadDir)){
+        loadDir_ = newLoadDir;
+    }
+    else{
+        newLoadDirSet = loadDir_;
+        cfg_.writeFile("config.cfg");
+        std::cout << "Old download directory " + newLoadDir + " is not available." << std::endl;
+    }
+    std::cout << "Current download directory is " << loadDir_ << std::endl;
 };
 
 ClientClass::~ClientClass(){
@@ -17,7 +28,8 @@ void ClientClass::StartConnection() {
     if (socket_ < 0)
     {
         LOG(ERROR) << "socket creation error!";
-        perror("Socket creation error: ");
+        perror("Socket creation error");
+        exit(1);
     }
 
     addr_.sin_family = AF_INET;
@@ -26,7 +38,8 @@ void ClientClass::StartConnection() {
     if (connect(socket_, (struct sockaddr*)&addr_, sizeof(addr_)) < 0)
     {
         LOG(ERROR) << "connection to " << IP_ << ':' << port_ << " is failed!";
-        perror("Connection error: ");
+        perror("Connection error");
+        exit(1);
     }
     LOG(INFO) << "connected to " << IP_ << ':' << port_;
 
@@ -130,27 +143,27 @@ void ClientClass::ParseCommand_(const std::string &command)
                         clientFileName = serverFileAdr;
                     }
                 }
-                std::ofstream clientFile(loadDir_ + '/' + clientFileName);
-                if (clientFile.is_open(), std::ios_base::binary){
+                int clientFile = open((loadDir_ + '/' + clientFileName).c_str(), O_WRONLY | O_CREAT, S_IRWXU);
+                if (clientFile >= 0){
                     MessageObject::SendMessageObject(socket_, INFO, firstArg + " " + serverFileAdr);
                     MessageObject result = MessageObject::RecvMessageObject(socket_);
                     if (result.getSignature() == SUCCESS){
                         while(true){
                             result = MessageObject::RecvMessageObject(socket_);
                             if (result.getSignature() == LOAD){
-                                clientFile.write(result.getBytes().data(), result.getsizeOfMessage());
+                                write(clientFile, result.getBytes().data(), result.getsizeOfMessage());
                             }
                             else
                             {
                                 std::cout << "File was loaded to " << loadDir_ + '/' + clientFileName << std::endl;
-                                clientFile.close();
+                                close(clientFile);
                                 break;
                             }
                         }
                     }
                     else{
                         std::cout << result.getMessage() << std::endl;
-                        clientFile.close();
+                        close(clientFile);
                         break;
                     }
                 }
@@ -166,6 +179,62 @@ void ClientClass::ParseCommand_(const std::string &command)
                 LOG(INFO) << "Exiting...";
                 Disconnect_();
                 return;
+                break;
+            }
+            case Commands::CLEARLOGS:
+            {
+                try{
+                    std::filesystem::remove_all("logs");
+                    std::filesystem::create_directory("logs");
+                }
+                catch(...){
+                    std::cout << "Something got wrong..." << std::endl;
+                    break;
+                }
+                std::cout << "Logs are cleared." << std::endl;
+                break;
+            }
+            case Commands:: CHANGELOADDIR:
+            {
+                std::string secondArg;
+                try{
+                    secondArg = command.substr(7);
+                }
+                catch(...){
+                    secondArg = "";
+                    break;
+                }
+                std::string absNewPath = GetAbsolutePath_(secondArg);
+                boost::filesystem::path path(absNewPath);
+                if (!boost::filesystem::exists(path)){
+                    std::cout << "This directory does not exist!" << std::endl;
+                    break;
+                }
+                if (!boost::filesystem::is_directory(path)){
+                    std::cout << "This is not a directory!" << std::endl;
+                    break;
+                }
+                if (access(absNewPath.c_str(), W_OK) == 0){
+                    loadDir_ = absNewPath;
+                    try{
+                        libconfig::Setting& root_ =  cfg_.getRoot();
+                        libconfig::Setting& newLoadDirSet =  root_.lookup("loadDir");
+                        newLoadDirSet = loadDir_;
+                        cfg_.writeFile("config.cfg");
+                    }
+                    catch(...){
+                        std::cout << "Cannot save to configs." << std::endl;
+                    }
+                    std::cout << "Current download directory is " << loadDir_ << std::endl;
+                }
+                else{
+                    std::cout << "Cannot write to " << absNewPath << std::endl;
+                }
+                break;
+            }
+            case Commands::LOADDIR:
+            {
+                std::cout << "Current download directory is " << loadDir_ << std::endl;
                 break;
             }
             default:
@@ -191,4 +260,15 @@ void ClientClass::ParseCommand_(const std::string &command)
 inline void ClientClass::Disconnect_(){
     this->~ClientClass();
     return;
+}
+
+std::string ClientClass::GetAbsolutePath_(const std::string path){
+    boost::filesystem::path newPath(path);
+    boost::filesystem::path basePath(loadDir_);
+    if (newPath.is_absolute()){
+        return path;
+    }
+    else{
+        return boost::filesystem::canonical(newPath, basePath).string();
+    }
 }
