@@ -9,8 +9,7 @@
 					"childIndexes" : 
 					[
 						1,
-						2,
-						3
+						2
 					],
 					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
 					"minimumCMakeVersion" : 
@@ -36,7 +35,7 @@
 					"source" : "server",
 					"targetIndexes" : 
 					[
-						3
+						2
 					]
 				},
 				{
@@ -53,21 +52,6 @@
 					[
 						1
 					]
-				},
-				{
-					"build" : "debug",
-					"jsonFile" : "directory-debug-Debug-9b4f44651216cb715917.json",
-					"minimumCMakeVersion" : 
-					{
-						"string" : "3.7"
-					},
-					"parentIndex" : 0,
-					"projectIndex" : 3,
-					"source" : "debug",
-					"targetIndexes" : 
-					[
-						2
-					]
 				}
 			],
 			"name" : "Debug",
@@ -77,8 +61,7 @@
 					"childIndexes" : 
 					[
 						1,
-						2,
-						3
+						2
 					],
 					"directoryIndexes" : 
 					[
@@ -99,7 +82,7 @@
 					"parentIndex" : 0,
 					"targetIndexes" : 
 					[
-						3
+						2
 					]
 				},
 				{
@@ -113,18 +96,6 @@
 					[
 						1
 					]
-				},
-				{
-					"directoryIndexes" : 
-					[
-						3
-					],
-					"name" : "debug",
-					"parentIndex" : 0,
-					"targetIndexes" : 
-					[
-						2
-					]
 				}
 			],
 			"targets" : 
@@ -132,28 +103,21 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ClientServerApp::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ClientServerApp-Debug-f16ced4d214dbae29cc5.json",
+					"jsonFile" : "target-ClientServerApp-Debug-33dadc00c668b8afece6.json",
 					"name" : "ClientServerApp",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 2,
 					"id" : "client::@b0c487aac068df482bf0",
-					"jsonFile" : "target-client-Debug-901c84d243da6f6b6047.json",
+					"jsonFile" : "target-client-Debug-2dd1e2a202fd0e04db47.json",
 					"name" : "client",
 					"projectIndex" : 2
 				},
 				{
-					"directoryIndex" : 3,
-					"id" : "debug::@789cf532419e99b67093",
-					"jsonFile" : "target-debug-Debug-022372572ced506e5e87.json",
-					"name" : "debug",
-					"projectIndex" : 3
-				},
-				{
 					"directoryIndex" : 1,
 					"id" : "server::@d19778d2e34a1e3ddfc0",
-					"jsonFile" : "target-server-Debug-63626a1388f3264fa8f8.json",
+					"jsonFile" : "target-server-Debug-b4ccaa25ea341e306092.json",
 					"name" : "server",
 					"projectIndex" : 1
 				}
@@ -163,8 +127,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/vadim/repos/ClientServerApp/ClientServerApp/build",
-		"source" : "/home/vadim/repos/ClientServerApp/ClientServerApp"
+		"build" : "/home/vadim/repos/ClientServerApp/build",
+		"source" : "/home/vadim/repos/ClientServerApp"
 	},
 	"version" : 
 	{

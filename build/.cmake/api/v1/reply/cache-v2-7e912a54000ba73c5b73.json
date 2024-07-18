@@ -107,7 +107,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/build"
+			"value" : "/home/vadim/repos/ClientServerApp/build"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -651,7 +651,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp"
+			"value" : "/home/vadim/repos/ClientServerApp"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -815,7 +815,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "4"
+			"value" : "3"
 		},
 		{
 			"name" : "CMAKE_OBJCOPY",
@@ -1187,7 +1187,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/build"
+			"value" : "/home/vadim/repos/ClientServerApp/build"
 		},
 		{
 			"name" : "ClientServerApp_IS_TOP_LEVEL",
@@ -1211,7 +1211,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp"
+			"value" : "/home/vadim/repos/ClientServerApp"
 		},
 		{
 			"name" : "FIND_PACKAGE_MESSAGE_DETAILS_Boost",
@@ -1355,7 +1355,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/build/client"
+			"value" : "/home/vadim/repos/ClientServerApp/build/client"
 		},
 		{
 			"name" : "client_IS_TOP_LEVEL",
@@ -1379,7 +1379,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/client"
+			"value" : "/home/vadim/repos/ClientServerApp/client"
 		},
 		{
 			"name" : "debug_BINARY_DIR",
@@ -1391,7 +1391,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/build/debug"
+			"value" : "/home/vadim/repos/ClientServerApp/build/debug"
 		},
 		{
 			"name" : "debug_IS_TOP_LEVEL",
@@ -1415,7 +1415,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/debug"
+			"value" : "/home/vadim/repos/ClientServerApp/debug"
 		},
 		{
 			"name" : "gflags_DIR",
@@ -1475,7 +1475,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/build/server"
+			"value" : "/home/vadim/repos/ClientServerApp/build/server"
 		},
 		{
 			"name" : "server_IS_TOP_LEVEL",
@@ -1499,7 +1499,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/vadim/repos/ClientServerApp/ClientServerApp/server"
+			"value" : "/home/vadim/repos/ClientServerApp/server"
 		}
 	],
 	"kind" : "cache",

@@ -1,32 +1,27 @@
 [
 {
-  "directory": "/home/vadim/repos/ClientServerApp/ClientServerApp/build",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/ClientServerApp/server/server -g -o server/CMakeFiles/server.dir/main.cpp.o -c /home/vadim/repos/ClientServerApp/ClientServerApp/server/main.cpp",
-  "file": "/home/vadim/repos/ClientServerApp/ClientServerApp/server/main.cpp"
+  "directory": "/home/vadim/repos/ClientServerApp/build",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/server/server -g -o server/CMakeFiles/server.dir/main.cpp.o -c /home/vadim/repos/ClientServerApp/server/main.cpp",
+  "file": "/home/vadim/repos/ClientServerApp/server/main.cpp"
 },
 {
-  "directory": "/home/vadim/repos/ClientServerApp/ClientServerApp/build",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/ClientServerApp/server/server -g -o server/CMakeFiles/server.dir/ServerClass.cpp.o -c /home/vadim/repos/ClientServerApp/ClientServerApp/server/ServerClass.cpp",
-  "file": "/home/vadim/repos/ClientServerApp/ClientServerApp/server/ServerClass.cpp"
+  "directory": "/home/vadim/repos/ClientServerApp/build",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/server/server -g -o server/CMakeFiles/server.dir/ServerClass.cpp.o -c /home/vadim/repos/ClientServerApp/server/ServerClass.cpp",
+  "file": "/home/vadim/repos/ClientServerApp/server/ServerClass.cpp"
 },
 {
-  "directory": "/home/vadim/repos/ClientServerApp/ClientServerApp/build",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/ClientServerApp/server/server -g -o server/CMakeFiles/server.dir/ClientThread.cpp.o -c /home/vadim/repos/ClientServerApp/ClientServerApp/server/ClientThread.cpp",
-  "file": "/home/vadim/repos/ClientServerApp/ClientServerApp/server/ClientThread.cpp"
+  "directory": "/home/vadim/repos/ClientServerApp/build",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/server/server -g -o server/CMakeFiles/server.dir/ClientThread.cpp.o -c /home/vadim/repos/ClientServerApp/server/ClientThread.cpp",
+  "file": "/home/vadim/repos/ClientServerApp/server/ClientThread.cpp"
 },
 {
-  "directory": "/home/vadim/repos/ClientServerApp/ClientServerApp/build",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/ClientServerApp/client/client -g -o client/CMakeFiles/client.dir/main.cpp.o -c /home/vadim/repos/ClientServerApp/ClientServerApp/client/main.cpp",
-  "file": "/home/vadim/repos/ClientServerApp/ClientServerApp/client/main.cpp"
+  "directory": "/home/vadim/repos/ClientServerApp/build",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/client/client -g -o client/CMakeFiles/client.dir/main.cpp.o -c /home/vadim/repos/ClientServerApp/client/main.cpp",
+  "file": "/home/vadim/repos/ClientServerApp/client/main.cpp"
 },
 {
-  "directory": "/home/vadim/repos/ClientServerApp/ClientServerApp/build",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/ClientServerApp/client/client -g -o client/CMakeFiles/client.dir/ClientClass.cpp.o -c /home/vadim/repos/ClientServerApp/ClientServerApp/client/ClientClass.cpp",
-  "file": "/home/vadim/repos/ClientServerApp/ClientServerApp/client/ClientClass.cpp"
-},
-{
-  "directory": "/home/vadim/repos/ClientServerApp/ClientServerApp/build",
-  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/ClientServerApp/debug/debug -g -o debug/CMakeFiles/debug.dir/main.cpp.o -c /home/vadim/repos/ClientServerApp/ClientServerApp/debug/main.cpp",
-  "file": "/home/vadim/repos/ClientServerApp/ClientServerApp/debug/main.cpp"
+  "directory": "/home/vadim/repos/ClientServerApp/build",
+  "command": "/usr/bin/c++ -DBOOST_ALL_NO_LIB -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT -I/home/vadim/repos/ClientServerApp/client/client -g -o client/CMakeFiles/client.dir/ClientClass.cpp.o -c /home/vadim/repos/ClientServerApp/client/ClientClass.cpp",
+  "file": "/home/vadim/repos/ClientServerApp/client/ClientClass.cpp"
 }
 ]

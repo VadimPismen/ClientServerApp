@@ -46,11 +46,13 @@ void ClientThread::WorkWithClient_(){
                         MessageObject::SendMessageObject(socket_, INFO, "You can only read.");
                     }
                     clientCD_ = dir;
-                    MessageObject::SendMessageObject(socket_, SUCCESS, "Current path: " + dir);
+                    MessageObject::SendMessageObject(socket_, INFO, "Current path: " + dir);
+                    MessageObject::SendMessageObject(socket_, SUCCESS);
                 }
                 else{
                     MessageObject::SendMessageObject(socket_, INFO, "Old path " + dir + " is not available.");
-                    MessageObject::SendMessageObject(socket_, SUCCESS, "Current path: " + clientCD_);
+                    MessageObject::SendMessageObject(socket_, INFO, "Current path: " + clientCD_);
+                    MessageObject::SendMessageObject(socket_, SUCCESS);
                 }
                 break;
             }
@@ -112,19 +114,19 @@ void ClientThread::ParseCommand_(const std::string command){
                 ss >> secondArg;
                 if (!secondArg.empty()){
                     try{
-                        MessageObject::SendMessageObject(socket_, SUCCESS, HELPSTRINGS.at(COMMANDS.at(secondArg)));
+                        MessageObject::SendMessageObject(socket_, INFO, HELPSTRINGS.at(COMMANDS.at(secondArg)));
                     }
                     catch(...)
                     {
-                        MessageObject::SendMessageObject(socket_, SUCCESS, UNDEFCOM + secondArg);
+                        MessageObject::SendMessageObject(socket_, INFO, UNDEFCOM + secondArg);
                     }
                 }
                 else{
                     for(auto& helpStr : HELPSTRINGS){
                         MessageObject::SendMessageObject(socket_, INFO, helpStr.second);
                     }
-                    MessageObject::SendMessageObject(socket_, SUCCESS);
                 }
+                MessageObject::SendMessageObject(socket_, SUCCESS);
                 break;
             }
             case Commands::CD:
@@ -134,18 +136,21 @@ void ClientThread::ParseCommand_(const std::string command){
                     secondArg = command.substr(3);
                 }
                 catch(...){
-                    MessageObject::SendMessageObject(socket_, SUCCESS, clientCD_);
+                    MessageObject::SendMessageObject(socket_, INFO, clientCD_);
+                    MessageObject::SendMessageObject(socket_, SUCCESS);
                     break;
                 }
                 try{
                     std::string absNewPath = GetAbsolutePath_(secondArg);
                     boost::filesystem::path path(absNewPath);
                     if (!boost::filesystem::exists(path)){
-                        MessageObject::SendMessageObject(socket_, SUCCESS, "This directory does not exist!");
+                        MessageObject::SendMessageObject(socket_, INFO, "This directory does not exist!");
+                        MessageObject::SendMessageObject(socket_, SUCCESS);
                         break;
                     }
                     if (!boost::filesystem::is_directory(path)){
-                        MessageObject::SendMessageObject(socket_, SUCCESS, "This is not a directory!");
+                        MessageObject::SendMessageObject(socket_, INFO, "This is not a directory!");
+                        MessageObject::SendMessageObject(socket_, SUCCESS);
                         break;
                     }
                     std::string result = "";
@@ -158,23 +163,64 @@ void ClientThread::ParseCommand_(const std::string command){
                             MessageObject::SendMessageObject(socket_, INFO, "You can only read.");
                         }
                         clientCD_ = absNewPath;
-                        MessageObject::SendMessageObject(socket_, SUCCESS, "Current path: " + absNewPath);
+                        MessageObject::SendMessageObject(socket_, INFO, "Current path: " + absNewPath);
                     }
                     else{
-                        MessageObject::SendMessageObject(socket_, SUCCESS, NOACCESSTO + DIRECTORY);
-                        break;
+                        MessageObject::SendMessageObject(socket_, INFO, NOACCESSTO + DIRECTORY);
                     }
                 }
                 catch(...){
-                    MessageObject::SendMessageObject(socket_, SUCCESS, "This directory does not exist.");
-                    break;
+                    MessageObject::SendMessageObject(socket_, INFO, "This directory does not exist.");
                 }
+                MessageObject::SendMessageObject(socket_, SUCCESS);
                 break;
             }
             case Commands::SAVEDIR:
             {
                 parent_->SaveUserDir(name_, clientCD_);
-                MessageObject::SendMessageObject(socket_, SUCCESS, "Saved directory: " + clientCD_);
+                MessageObject::SendMessageObject(socket_, INFO, "Saved directory: " + clientCD_);
+                MessageObject::SendMessageObject(socket_, SUCCESS);
+                break;
+            }
+            case Commands::GETDIRLIST:
+            {
+                std::string secondArg;
+                try{
+                    secondArg = command.substr(3);
+                }
+                catch(...){
+                    DIR *dir = opendir (clientCD_.c_str());
+                    struct dirent *ent;
+                    if (dir != nullptr) {
+                        while ((ent = readdir (dir)) != NULL) {
+                            MessageObject::SendMessageObject(socket_, INFO, ent->d_name);
+                        }
+                        closedir(dir);
+                    }
+                    else {
+                        MessageObject::SendMessageObject(socket_, INFO, "Current directory is not available!");
+                    }
+                    MessageObject::SendMessageObject(socket_, SUCCESS);
+                    break;
+                }
+                try{
+                    std::string absNewPath = GetAbsolutePath_(secondArg);
+                    DIR *dir = opendir (absNewPath.c_str());
+                    struct dirent *ent;
+                    if (dir != nullptr) {
+                        while ((ent = readdir (dir)) != NULL) {
+                            MessageObject::SendMessageObject(socket_, INFO, ent->d_name);
+                        }
+                        closedir (dir);
+                    }
+                    else {
+                        MessageObject::SendMessageObject(socket_, INFO, "Current directory is not available!");
+                    }
+                }
+                catch(...){
+                    MessageObject::SendMessageObject(socket_, INFO, "This directory does not exist.");
+                }
+                MessageObject::SendMessageObject(socket_, SUCCESS);
                 break;
             }
             case Commands::PROCS:
@@ -208,43 +254,41 @@ void ClientThread::ParseCommand_(const std::string command){
                                 allProcInfo += "\texe: " + std::string(buf, bytes) + "\n";
                             }
 
-                            // bytes = readlink((procDir + "/cwd").c_str(), buf, FILEBLOCKSIZE);
-                            // if (bytes >= 0){
-                            //     allProcInfo += "\tcwd: " + std::string(buf, bytes) + "\n";
-                            // }
-                            // file.open(procDir + "/cmdline");
-                            // if (file.is_open()){
-                            //     file.read(buf, FILEBLOCKSIZE);
-                            //     if (file.gcount()){
-                            //         allProcInfo += "\tcmdline: " + std::string(buf, file.gcount()) + "\n";
-                            //     }
-                            // }
-                            // if (access((procDir + "/fd").c_str(), R_OK) == 0){
-                            //     for (auto const& descriptor : std::filesystem::directory_iterator{procDir + "/fd"}){
-                            //         struct stat fileInfo;
-                            //         char modeval [9];
-                            //         procInfo = "\t\t";
-                            //         if(stat(descriptor.path().c_str(), &fileInfo) == 0){
-                            //             mode_t perm = fileInfo.st_mode;
-                            //             modeval[0] = (perm & S_IRUSR) ? 'r' : '-';
-                            //             modeval[1] = (perm & S_IWUSR) ? 'w' : '-';
-                            //             modeval[2] = (perm & S_IXUSR) ? 'x' : '-';
-                            //             modeval[3] = (perm & S_IRGRP) ? 'r' : '-';
-                            //             modeval[4] = (perm & S_IWGRP) ? 'w' : '-';
-                            //             modeval[5] = (perm & S_IXGRP) ? 'x' : '-';
-                            //             modeval[6] = (perm & S_IROTH) ? 'r' : '-';
-                            //             modeval[7] = (perm & S_IWOTH) ? 'w' : '-';
-                            //             modeval[8] = (perm & S_IXOTH) ? 'x' : '-';
-                            //             procInfo += std::string(modeval, 9) + "\n";
-                            //         }
-                            //     }
-                            // }
-                            //         bytes = readlink((descriptor.path()).c_str(), buf, FILEBLOCKSIZE);
-                            //         if (bytes >= 0){
-                            //             allProcInfo += " " + descriptor.path().filename().string() + " -> " + std::string(buf, bytes) + "\n";
-                            //         }
-                            //     }
-                            // }
+                            bytes = readlink((procDir + "/cwd").c_str(), buf, FILEBLOCKSIZE);
+                            if (bytes >= 0){
+                                allProcInfo += "\tcwd: " + std::string(buf, bytes) + "\n";
+                            }
+                            file.open(procDir + "/cmdline");
+                            if (file.is_open()){
+                                file.read(buf, FILEBLOCKSIZE);
+                                if (file.gcount()){
+                                    allProcInfo += "\tcmdline: " + std::string(buf, file.gcount()) + "\n";
+                                }
+                                file.close();
+                            }
+                            if (access((procDir + "/fd").c_str(), R_OK) == 0){
+                                for (auto const& descriptor : std::filesystem::directory_iterator{procDir + "/fd"}){
+                                    struct stat fileInfo;
+                                    char modeval [9];
+                                    procInfo = "\t\t";
+                                    if(stat(descriptor.path().c_str(), &fileInfo) == 0){
+                                        mode_t perm = fileInfo.st_mode;
+                                        modeval[0] = (perm & S_IRUSR) ? 'r' : '-';
+                                        modeval[1] = (perm & S_IWUSR) ? 'w' : '-';
+                                        modeval[2] = (perm & S_IXUSR) ? 'x' : '-';
+                                        modeval[3] = (perm & S_IRGRP) ? 'r' : '-';
+                                        modeval[4] = (perm & S_IWGRP) ? 'w' : '-';
+                                        modeval[5] = (perm & S_IXGRP) ? 'x' : '-';
+                                        modeval[6] = (perm & S_IROTH) ? 'r' : '-';
+                                        modeval[7] = (perm & S_IWOTH) ? 'w' : '-';
+                                        modeval[8] = (perm & S_IXOTH) ? 'x' : '-';
+                                    }
+                                    bytes = readlink((descriptor.path()).c_str(), buf, FILEBLOCKSIZE);
+                                    if (bytes >= 0){
+                                        allProcInfo += "\t\t" + std::string(modeval, 9) + " " + descriptor.path().filename().string() + " -> " + std::string(buf, bytes) + "\n";
+                                    }
+                                }
+                            }
                             MessageObject::SendMessageObject(socket_, INFO, allProcInfo);
                         }
                     }
@@ -259,24 +303,34 @@ void ClientThread::ParseCommand_(const std::string command){
                     boost::filesystem::path relPath(serverFileAdr);
                     boost::filesystem::path absPath = boost::filesystem::canonical(relPath, boost::filesystem::path(clientCD_));
                     int file = open(absPath.string().c_str(), O_RDONLY);
-                    //std::ifstream file(absPath.string(), std::ios_base::binary);
                     if (file >= 0){
                         MessageObject::SendMessageObject(socket_, SUCCESS);
                         char buf[FILEBLOCKSIZE];
                         ssize_t sizeOfBlock = 0;
+                        bool isNotInterrupted = true;
+                        badLoadThread_ = boost::thread(&ClientThread::interceptLoadFileInterruption_, this, isNotInterrupted);
                         while(true){
-                            sizeOfBlock = read(file, buf, FILEBLOCKSIZE);
-                            if (sizeOfBlock < FILEBLOCKSIZE){
-                                if (sizeOfBlock == 0){
-                                    MessageObject::SendMessageObject(socket_, SUCCESS);
+                            if (isNotInterrupted){
+                                sizeOfBlock = read(file, buf, FILEBLOCKSIZE);
+                                if (sizeOfBlock < FILEBLOCKSIZE){
+                                    if (sizeOfBlock > 0){
+                                        MessageObject::SendMessageObject(socket_, LOAD, buf, sizeOfBlock);
+                                        MessageObject::SendMessageObject(socket_, SUCCESS);
+                                    }
+                                    else if (sizeOfBlock == 0){
+                                        MessageObject::SendMessageObject(socket_, SUCCESS);
+                                    }
+                                    else{
+                                        MessageObject::SendMessageObject(socket_, BADLOAD, "Something got wrong with file on server.\nDownload is interrupted!");
+                                    }
+                                    badLoadThread_.join();
+                                    break;
                                 }
-                                else{
-                                    MessageObject::SendMessageObject(socket_, LOAD, buf, sizeOfBlock);
-                                    MessageObject::SendMessageObject(socket_, SUCCESS);
-                                }
+                                MessageObject::SendMessageObject(socket_, LOAD, buf, FILEBLOCKSIZE);
+                            }
+                            else{
                                 break;
                             }
-                            MessageObject::SendMessageObject(socket_, LOAD, buf, FILEBLOCKSIZE);
                         }
                         close(file);
                         break;
@@ -294,15 +348,24 @@ void ClientThread::ParseCommand_(const std::string command){
             }
             default:
             {
-                MessageObject::SendMessageObject(socket_, SUCCESS, "Undefined command");
-                //MessageObject::SendMessageObject(socket_, SUCCESS, (ExecuteSystemCommandAndGetResult_(command)));
+                MessageObject::SendMessageObject(socket_, INFO, "Undefined command");
+                MessageObject::SendMessageObject(socket_, SUCCESS);
                 break;
             }
         }
     }
-    catch(...){
-        MessageObject::SendMessageObject(socket_, SUCCESS, "Undefined command");
-        //MessageObject::SendMessageObject(socket_, SUCCESS, (ExecuteSystemCommandAndGetResult_(command)));
+    catch(std::string error_message){
+        MessageObject::SendMessageObject(socket_, INFO, error_message);
+        MessageObject::SendMessageObject(socket_, SUCCESS);
+    }
+    return;
+}
+
+void ClientThread::interceptLoadFileInterruption_(bool &isNotInterrupted)
+{
+    if (MessageObject::RecvMessageObject(socket_).getSignature() != SUCCESS){
+        isNotInterrupted = false;
+        MessageObject::SendMessageObject(socket_, BADLOAD);
     }
     return;
 }

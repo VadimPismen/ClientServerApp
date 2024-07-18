@@ -31,7 +31,6 @@ namespace CSA
         libconfig::Config cfg_;
         std::string loadDir_ = std::filesystem::current_path().string() + "/" + DEFDIR;
 
-        ClientState state_ = ClientState::LOGIN;
         int socket_;
         struct sockaddr_in addr_;
 

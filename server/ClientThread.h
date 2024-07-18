@@ -26,11 +26,12 @@ namespace CSA
 
         void ParseCommand_(const std::string command);
 
+        void interceptLoadFileInterruption_(bool &isNotInterrupted);
+
         std::string ExecuteSystemCommandAndGetResult_(const std::string command);
 
         std::string GetAbsolutePath_(const std::string path);
 
-        ClientState state_ = ClientState::LOGIN;
         ServerClass* parent_;
         int socket_;
         std::string name_;
@@ -38,6 +39,7 @@ namespace CSA
         bool canWrite_ = true;
 
         boost::thread workingThread_;
+        boost::thread badLoadThread_;
         uint16_t port_;
         std::string IP_;
 

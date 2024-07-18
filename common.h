@@ -9,6 +9,7 @@
 
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -37,58 +38,54 @@ namespace CSA
     const std::string DIRECTORY = "directory";
 
     const char INFO = 'I';
-    const char SUCCESS = 'S';
     const char GETOUT = 'O';
-    const char GOODBYE = 'G';
     const char LOAD = 'L';
+    const char BADLOAD = 'B';
+
+    const char SUCCESS = 'S';
     
-    enum class ClientState{
-        IDLE,
-        LOGIN,
-        EXIT,
-        WAITFORRESULT,
-        LOADFILE
-    };
 
     enum class Commands{
+        CD,
+        CLEARLOGS,
         EXIT,
         HELP,
-        CD,
-        SAVEDIR,
-        LOADFILE,
-        CLEARLOGS,
         LOADDIR,
-        CHANGELOADDIR,
-        PROCS
+        LOADFILE,
+        GETDIRLIST,
+        PROCS,
+        SAVEDIR,
     };
 
     const std::map<std::string, Commands> COMMANDS
     {
-        {"help", Commands::HELP},
-        {"exit", Commands::EXIT},
         {"cd", Commands::CD},
-        {"savedir", Commands::SAVEDIR},
-        {"load", Commands::LOADFILE},
         {"clearlogs", Commands::CLEARLOGS},
-        {"ldir", Commands::LOADDIR},
-        {"chldir", Commands::CHANGELOADDIR},
-        {"procs", Commands::PROCS}
+        {"exit", Commands::EXIT},
+        {"help", Commands::HELP},
+        {"load", Commands::LOADFILE},
+        {"loaddir", Commands::LOADDIR},
+        {"ls", Commands::GETDIRLIST},
+        {"procs", Commands::PROCS},
+        {"savedir", Commands::SAVEDIR},
     };
 
     const std::map<Commands, std::string> HELPSTRINGS
     {
-        {Commands::HELP, "help - help on all commands;\n\
-help <name of command> - help on a specific command;"},
-        {Commands::EXIT, "exit - exit the program;"},
         {Commands::CD, "cd - show current directory;\n\
 cd <absolute or relative to the current directory> - change current directory;"},
-        {Commands::SAVEDIR, "savedir - save current directory on account;"},
+        {Commands::CLEARLOGS, "clearlogs - clear logs;"},
+        {Commands::EXIT, "exit - exit the program;"},
+        {Commands::HELP, "help - help on all commands;\n\
+help <name of command> - help on a specific command;"},
         {Commands::LOADFILE, "load \"path to file\" - load file to download directory;\n\
 load \"path to file\" <filename> - load file to download directory and name it as <filename>;"},
-        {Commands::CLEARLOGS, "clearlogs - clear logs;"},
-        {Commands::LOADDIR, "ldir - show current download directory;"},
-        {Commands::CHANGELOADDIR, "chldir <absolute or relative to the current download directory> - change current download directory;"},
+        {Commands::LOADDIR, "loaddir - show current download directory;\n\
+loaddir <absolute or relative to the current download directory> - change current download directory;"},
+        {Commands::GETDIRLIST, "ls - show a list of files in current directory;\n\
+ls <absolute or relative to the current directory> - show a list of files in directory;"},
         {Commands::PROCS, "procs - show information about server's processes;"},
+        {Commands::SAVEDIR, "savedir - save current directory on account;"},
     };
 
     class ConnectionLostException{};
@@ -218,15 +215,15 @@ load \"path to file\" <filename> - load file to download directory and name it a
         }
 
         static MessageObject RecvMessageObject(int socket){
-            char signature = '\0';            
+            char signature = '\0';
+            size_t sizeOfMessage = 0;
+            std::vector<char> message = {};
             if (recv(socket, &signature, sizeof(signature), MSG_NOSIGNAL) < 0){
                 throw ConnectionLostException();
             }
-            size_t sizeOfMessage = 0;
             if (recv(socket, &sizeOfMessage, sizeof(sizeOfMessage), MSG_NOSIGNAL) < 0){
                 throw ConnectionLostException();
             }
-            std::vector<char> message = {};
             if (sizeOfMessage){
                 ssize_t allGotBytes = 0;
                 ssize_t gotBytes = 0;

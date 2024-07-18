@@ -58,10 +58,10 @@ void ClientClass::StartConnection() {
                 LOG(INFO) << "Successful login as " << login_;
                 while(true){
                     MessageObject result = MessageObject::RecvMessageObject(socket_);
-                    std::cout << result.getMessage() << std::endl;
                     if (result.getSignature() == SUCCESS){
                         break;
                     };
+                    std::cout << result.getMessage() << std::endl;
                 }
                 break;
             }
@@ -150,13 +150,31 @@ void ClientClass::ParseCommand_(const std::string &command)
                     if (result.getSignature() == SUCCESS){
                         while(true){
                             result = MessageObject::RecvMessageObject(socket_);
-                            if (result.getSignature() == LOAD){
-                                write(clientFile, result.getBytes().data(), result.getsizeOfMessage());
+                            char signature = result.getSignature();
+                            if (signature == LOAD){
+                                ssize_t writtenBytes = write(clientFile, result.getBytes().data(), result.getsizeOfMessage());
+                                if (writtenBytes < 0){
+                                    std::cout << "Something got wrong with client's file.\nDownload is interrupted!" << std::endl;
+                                    MessageObject::SendMessageObject(socket_, BADLOAD);
+                                    close(clientFile);
+                                    while (true){
+                                        if (MessageObject::RecvMessageObject(socket_).getSignature() == BADLOAD){
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
                             }
-                            else
-                            {
+                            else if (signature == SUCCESS){
                                 std::cout << "File was loaded to " << loadDir_ + '/' + clientFileName << std::endl;
+                                MessageObject::SendMessageObject(socket_, SUCCESS);
                                 close(clientFile);
+                                break;
+                            }
+                            else{
+                                std::cout << result.getMessage() << std::endl;
+                                close(clientFile);
+                                MessageObject::SendMessageObject(socket_, SUCCESS);
                                 break;
                             }
                         }
@@ -194,14 +212,21 @@ void ClientClass::ParseCommand_(const std::string &command)
                 std::cout << "Logs are cleared." << std::endl;
                 break;
             }
-            case Commands:: CHANGELOADDIR:
+            case Commands::LOADDIR:
             {
                 std::string secondArg;
                 try{
                     secondArg = command.substr(7);
+                    while(secondArg[0] == ' '){
+                        secondArg.erase(0, 1);
+                    }
                 }
                 catch(...){
-                    secondArg = "";
+                    std::cout << "Current download directory is " << loadDir_ << std::endl;
+                    break;
+                }
+                if (secondArg.empty()){
+                    std::cout << "Current download directory is " << loadDir_ << std::endl;
                     break;
                 }
                 std::string absNewPath = GetAbsolutePath_(secondArg);
@@ -232,26 +257,22 @@ void ClientClass::ParseCommand_(const std::string &command)
                 }
                 break;
             }
-            case Commands::LOADDIR:
-            {
-                std::cout << "Current download directory is " << loadDir_ << std::endl;
-                break;
-            }
             default:
             {
                 MessageObject::SendMessageObject(socket_, INFO, command);
                 while(true){
                     MessageObject result = MessageObject::RecvMessageObject(socket_);
-                    std::cout << result.getMessage() << std::endl;
                     if (result.getSignature() == SUCCESS){
                         break;
                     };
+                    std::cout << result.getMessage() << std::endl;
                 }
                 break;
             }
         }
     }
     catch(...){
+        std::cout << "Undefined command. Type \"help\" to get a list of possible commands." << std::endl;
         return;
     }
     return;

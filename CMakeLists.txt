@@ -3,8 +3,7 @@ project(ClientServerApp)
 
 add_subdirectory(server)
 add_subdirectory(client)
-add_subdirectory(debug)
 
 add_custom_target(ClientServerApp)
-add_dependencies(ClientServerApp server client debug)
+add_dependencies(ClientServerApp server client)
 

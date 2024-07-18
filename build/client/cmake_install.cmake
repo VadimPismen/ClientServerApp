@@ -1,4 +1,4 @@
-# Install script for directory: /home/vadim/repos/ClientServerApp/ClientServerApp/client
+# Install script for directory: /home/vadim/repos/ClientServerApp/client
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
