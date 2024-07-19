@@ -3,6 +3,9 @@
 #include <iostream>
 #include <filesystem>
 #include <regex>
+#include <bitset>
+#include <algorithm>
+#include <map>
 
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
@@ -19,8 +22,9 @@
 #include <sys/ioctl.h>
 
 #include <stdint.h>
+
+#define GLOG_NO_ABBREVIATED_SEVERITIES
 #include <glog/logging.h>
-#include <map>
 
 #include <libconfig.h++>
 
@@ -30,6 +34,7 @@ namespace CSA
     const size_t LENSIZE = 10;
     const size_t FILEBLOCKSIZE = 4096;
     const std::regex LOADFILEREGEX("[\"](.*?)(?=[\"](\\s|$))");
+    const std::regex LSREGEX("^[-]\\S*(\\s|$)");
 
     const std::string SIGN = "CSA";
     const std::string DEFDIR = "loads";
