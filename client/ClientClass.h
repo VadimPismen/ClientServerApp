@@ -7,7 +7,7 @@ namespace CSA
     class ClientClass
     {
     public:
-        ClientClass(std::string IP, uint16_t port);
+        ClientClass(std::string cfgFile);
         ~ClientClass();
 
         void StartConnection();
@@ -23,10 +23,11 @@ namespace CSA
         void ParseCommand_(const std::string &command);
         inline void Disconnect_();
 
-        std::string GetAbsolutePath_(const std::string path);
+        std::string GetAbsolutePath_(const std::string path, const std::string base);
 
+        std::string logsDir_;
         std::string IP_;
-        uint16_t port_;
+        int port_;
         std::string login_;
 
         std::string cfgFile_;

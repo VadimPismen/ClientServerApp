@@ -2,20 +2,27 @@
 
 using namespace CSA;
 
-ClientClass::ClientClass(std::string IP, uint16_t port): IP_(IP), port_(port){
-    cfg_.readFile("config.cfg");
+ClientClass::ClientClass(std::string cfgFile): cfgFile_(cfgFile){
+    cfg_.readFile(cfgFile);
     libconfig::Setting& root_ =  cfg_.getRoot();
+
+    root_.lookupValue("logs", logsDir_);
+    logsDir_ = GetAbsolutePath_(logsDir_, std::filesystem::current_path().string());
+    FLAGS_log_dir = logsDir_;
+    google::InitGoogleLogging("Client");
+
     libconfig::Setting& newLoadDirSet =  root_.lookup("loadDir");
-    std::string newLoadDir = newLoadDirSet;
+    std::string newLoadDir = logsDir_ = GetAbsolutePath_(newLoadDirSet, std::filesystem::current_path().string());
     if (std::filesystem::is_directory(newLoadDir)){
         loadDir_ = newLoadDir;
     }
     else{
         newLoadDirSet = loadDir_;
-        cfg_.writeFile("config.cfg");
+        cfg_.writeFile(cfgFile);
         std::cout << "Old download directory " + newLoadDir + " is not available." << std::endl;
     }
     std::cout << "Current download directory is " << loadDir_ << std::endl;
+    LOG(INFO) << "client object was created. Download directory is " << loadDir_;
 };
 
 ClientClass::~ClientClass(){
@@ -24,7 +31,11 @@ ClientClass::~ClientClass(){
 }
 
 void ClientClass::StartConnection() {
-     socket_ = socket(AF_INET, SOCK_STREAM, 0);
+    libconfig::Setting& connectionConfs_ = cfg_.getRoot().lookup("connection");
+    connectionConfs_.lookupValue("ip", IP_);
+    connectionConfs_.lookupValue("port", port_);
+
+    socket_ = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_ < 0)
     {
         LOG(ERROR) << "socket creation error!";
@@ -55,7 +66,7 @@ void ClientClass::StartConnection() {
             
             if (recv.getSignature() == SUCCESS){
                 std::cout << "Successful login!" << std::endl;
-                LOG(INFO) << "Successful login as " << login_;
+                LOG(INFO) << "successful login as " << login_;
                 while(true){
                     MessageObject result = MessageObject::RecvMessageObject(socket_);
                     if (result.getSignature() == SUCCESS){
@@ -68,7 +79,7 @@ void ClientClass::StartConnection() {
             else{
                 if (recv.getSignature() != GETOUT){
                     std::cout << recv.getMessage() << std::endl << std::endl;
-                    LOG(INFO) << "Unsuccessful attempt.";
+                    LOG(INFO) << "unsuccessful attempt.";
                 }
                 else{
                     throw KickedException();
@@ -86,7 +97,7 @@ void ClientClass::StartConnection() {
         return;
     }
     catch(KickedException){
-        std::cout << "Alas!";
+        std::cout << "Alas!" << std::endl;
         LOG(WARNING) << "couldn't login... Disconnect.";
         Disconnect_();
         return;
@@ -143,7 +154,9 @@ void ClientClass::ParseCommand_(const std::string &command)
                         clientFileName = serverFileAdr;
                     }
                 }
-                int clientFile = open((loadDir_ + '/' + clientFileName).c_str(), O_WRONLY | O_CREAT, S_IRWXU);
+                std::string filePath = loadDir_ + '/' + clientFileName;
+                int clientFile = open(filePath.c_str(), O_WRONLY | O_CREAT, S_IRWXU);
+                LOG(INFO) << "try to load " << filePath;
                 if (clientFile >= 0){
                     MessageObject::SendMessageObject(socket_, INFO, firstArg + " " + serverFileAdr);
                     MessageObject result = MessageObject::RecvMessageObject(socket_);
@@ -155,6 +168,7 @@ void ClientClass::ParseCommand_(const std::string &command)
                                 ssize_t writtenBytes = write(clientFile, result.getBytes().data(), result.getsizeOfMessage());
                                 if (writtenBytes < 0){
                                     std::cout << "Something got wrong with client's file.\nDownload is interrupted!" << std::endl;
+                                    LOG(WARNING) << "something got wrong with file. Download is interrupted!";
                                     MessageObject::SendMessageObject(socket_, BADLOAD);
                                     close(clientFile);
                                     while (true){
@@ -166,13 +180,16 @@ void ClientClass::ParseCommand_(const std::string &command)
                                 }
                             }
                             else if (signature == SUCCESS){
-                                std::cout << "File was loaded to " << loadDir_ + '/' + clientFileName << std::endl;
+                                std::cout << "File was loaded to " << filePath << std::endl;
+                                LOG(INFO) << "file is loaded.";
                                 MessageObject::SendMessageObject(socket_, SUCCESS);
                                 close(clientFile);
                                 break;
                             }
                             else{
-                                std::cout << result.getMessage() << std::endl;
+                                std::string message = result.getMessage();
+                                std::cout << message << std::endl;
+                                LOG(WARNING) << message;
                                 close(clientFile);
                                 MessageObject::SendMessageObject(socket_, SUCCESS);
                                 break;
@@ -181,12 +198,14 @@ void ClientClass::ParseCommand_(const std::string &command)
                     }
                     else{
                         std::cout << result.getMessage() << std::endl;
+                        remove(filePath.c_str());
                         close(clientFile);
                         break;
                     }
                 }
                 else{
-                    std::cout << "Cannot create file!" << std::endl;
+                    std::cout << "Cannot create/rewrite file!" << std::endl;
+                    LOG(WARNING) << "cannot create/rewrite file!";
                 }
                 break;
             }
@@ -194,7 +213,7 @@ void ClientClass::ParseCommand_(const std::string &command)
             {
                 MessageObject::SendMessageObject(socket_, INFO, command);
                 std::cout << "Exiting..." << std::endl;
-                LOG(INFO) << "Exiting...";
+                LOG(INFO) << "exiting...";
                 Disconnect_();
                 return;
                 break;
@@ -207,9 +226,11 @@ void ClientClass::ParseCommand_(const std::string &command)
                 }
                 catch(...){
                     std::cout << "Something got wrong..." << std::endl;
+                    LOG(WARNING) << "clearing logs is unsuccessful.";
                     break;
                 }
                 std::cout << "Logs are cleared." << std::endl;
+                LOG(INFO) << "logs was cleared.";
                 break;
             }
             case Commands::LOADDIR:
@@ -223,13 +244,15 @@ void ClientClass::ParseCommand_(const std::string &command)
                 }
                 catch(...){
                     std::cout << "Current download directory is " << loadDir_ << std::endl;
+                    LOG(INFO) << "current download directory is " << loadDir_;
                     break;
                 }
                 if (secondArg.empty()){
                     std::cout << "Current download directory is " << loadDir_ << std::endl;
+                    LOG(INFO) << "current download directory is " << loadDir_;
                     break;
                 }
-                std::string absNewPath = GetAbsolutePath_(secondArg);
+                std::string absNewPath = GetAbsolutePath_(secondArg, loadDir_);
                 boost::filesystem::path path(absNewPath);
                 if (!boost::filesystem::exists(path)){
                     std::cout << "This directory does not exist!" << std::endl;
@@ -249,8 +272,10 @@ void ClientClass::ParseCommand_(const std::string &command)
                     }
                     catch(...){
                         std::cout << "Cannot save to configs." << std::endl;
+                        LOG(WARNING) << "cannot save new download directory to configs!" << loadDir_;
                     }
                     std::cout << "Current download directory is " << loadDir_ << std::endl;
+                    LOG(INFO) << "current download directory is " << loadDir_;
                 }
                 else{
                     std::cout << "Cannot write to " << absNewPath << std::endl;
@@ -283,9 +308,9 @@ inline void ClientClass::Disconnect_(){
     return;
 }
 
-std::string ClientClass::GetAbsolutePath_(const std::string path){
+std::string ClientClass::GetAbsolutePath_(const std::string path, const std::string base){
     boost::filesystem::path newPath(path);
-    boost::filesystem::path basePath(loadDir_);
+    boost::filesystem::path basePath(base);
     if (newPath.is_absolute()){
         return path;
     }

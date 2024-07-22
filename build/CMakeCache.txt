@@ -273,6 +273,15 @@ libconfig++_DIR:PATH=/usr/local/lib/cmake/libconfig++
 libconfig_DIR:PATH=/usr/local/lib/cmake/libconfig
 
 //Value Computed by CMake
+myprog_BINARY_DIR:STATIC=/home/vadim/repos/ClientServerApp/build/myprog
+
+//Value Computed by CMake
+myprog_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+myprog_SOURCE_DIR:STATIC=/home/vadim/repos/ClientServerApp/myprog
+
+//Value Computed by CMake
 server_BINARY_DIR:STATIC=/home/vadim/repos/ClientServerApp/build/server
 
 //Value Computed by CMake

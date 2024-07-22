@@ -1466,6 +1466,42 @@
 			"value" : "/usr/local/lib/cmake/libconfig"
 		},
 		{
+			"name" : "myprog_BINARY_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/home/vadim/repos/ClientServerApp/build/myprog"
+		},
+		{
+			"name" : "myprog_IS_TOP_LEVEL",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "OFF"
+		},
+		{
+			"name" : "myprog_SOURCE_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Value Computed by CMake"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "/home/vadim/repos/ClientServerApp/myprog"
+		},
+		{
 			"name" : "server_BINARY_DIR",
 			"properties" : 
 			[

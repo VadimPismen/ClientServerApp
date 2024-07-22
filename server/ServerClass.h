@@ -14,7 +14,7 @@ namespace CSA
         ~ServerClass();
 
         void OpenServer();
-        void DeleteClient(int socket);
+        void DeleteClient(int socket, std::string logMessage);
 
         bool LookForAccount(std::string login, std::string password);
         std::string GetUserDirFromConfs(std::string login);
@@ -24,10 +24,14 @@ namespace CSA
     private:
 
         void GetAdminCommands_();
+        std::string GetAbsolutePath_(const std::string path, const std::string base);
+
         boost::thread adminCommandsThread_;
 
         std::string cfgFile_;
         libconfig::Config cfg_;
+        
+        std::string logsDir_;
 
         int port_;
         int serverSocket_;

@@ -28,6 +28,7 @@ namespace CSA
 
         void interceptLoadFileInterruption_(bool &isNotInterrupted);
 
+        [[deprecated("Unused")]]
         std::string ExecuteSystemCommandAndGetResult_(const std::string command);
 
         std::string GetAbsolutePath_(const std::string path);
@@ -35,8 +36,9 @@ namespace CSA
         ServerClass* parent_;
         int socket_;
         std::string name_;
-        std::string clientCD_ = std::filesystem::current_path().string();
+        std::string clientCD_ = std::string(get_current_dir_name());
         bool canWrite_ = true;
+        bool isOnline_ = true;
 
         boost::thread workingThread_;
         boost::thread badLoadThread_;

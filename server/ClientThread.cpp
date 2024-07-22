@@ -64,8 +64,8 @@ void ClientThread::WorkWithClient_(){
                 }
                 else{
                     MessageObject::SendMessageObject(socket_, GETOUT);
-                    LOG(INFO) << IP_ << ':' << port_ << ": couldn't login. Kicked!";
-                    parent_->DeleteClient(socket_);
+                    isOnline_ = false;
+                    parent_->DeleteClient(socket_, IP_ + ":" + std::to_string(port_) + ": couldn't login. Kicked!");
                     return;
                 }
             }
@@ -76,22 +76,24 @@ void ClientThread::WorkWithClient_(){
         }
     }
     catch(ConnectionLostException){
-        DisconnectClient_();
+        if (isOnline_){
+            LostConnection_();
+        }
         return;
     }
 }
 
 void ClientThread::DisconnectClient_()
 {
-    LOG(INFO) << name_ << '(' << IP_ << ':' << port_ << ") left.";
-    parent_->DeleteClient(socket_);
+    isOnline_ = false;
+    parent_->DeleteClient(socket_, name_ + "(" + IP_ + ":" + std::to_string(port_) + ") left.");
     return;
 }
 
 void ClientThread::LostConnection_()
 {
-    LOG(WARNING) << "lost connection to " << IP_ << ':' << port_;
-    parent_->DeleteClient(socket_);
+    isOnline_ = false;
+    parent_->DeleteClient(socket_, "lost connection to " + IP_ + ":" + std::to_string(port_) + ")");
     return;
 }
 
@@ -155,14 +157,16 @@ void ClientThread::ParseCommand_(const std::string command){
                     }
                     std::string result = "";
                     if (access(absNewPath.c_str(), R_OK) == 0){
+                        clientCD_ = absNewPath;
                         if (access(absNewPath.c_str(), W_OK) == 0){
                             canWrite_ = true;
+                            LOG(INFO) << name_ << '(' << IP_ << ':' << port_ << ") entered " << clientCD_;
                         }
                         else{
                             canWrite_ = false;
                             MessageObject::SendMessageObject(socket_, INFO, "You can only read.");
+                            LOG(INFO) << name_ << '(' << IP_ << ':' << port_ << ") entered (readonly) " << clientCD_;
                         }
-                        clientCD_ = absNewPath;
                         MessageObject::SendMessageObject(socket_, INFO, "Current path: " + absNewPath);
                     }
                     else{
@@ -288,16 +292,16 @@ void ClientThread::ParseCommand_(const std::string command){
                     closedir (dir);
                     std::sort(names.begin(), names.end());
                     if (!args[2]){
-                        std::sort(dirs.begin(), dirs.end());
                         for(std::string name : dirs){
                             MessageObject::SendMessageObject(socket_, INFO, "*dir* " + name);
                         }
                     }
-                    for(std::string name : names){
-                        MessageObject::SendMessageObject(socket_, INFO, name);
+                    if (!args[3]){
+                        for(std::string name : names){
+                            MessageObject::SendMessageObject(socket_, INFO, name);
+                        }
                     }
                     if (!others.empty()){
-                        std::sort(others.begin(), others.end());
                         for(std::string name : others){
                             MessageObject::SendMessageObject(socket_, INFO, "*smthg* " + name);
                         }
@@ -313,11 +317,35 @@ void ClientThread::ParseCommand_(const std::string command){
             }
             case Commands::PROCS:
             {
-                int file;
+                std::bitset<2> args;
+                try{
+                    std::string strArgs = command.substr(6);
+                    while (strArgs[0] == ' '){
+                        strArgs.erase(0, 1);
+                    }
+                    if (!strArgs.empty()){
+                        if (strArgs[0] == '-'){
+                            for(size_t i = 0; i < strArgs.length(); i++){
+                                if (strArgs[i] == ' '){
+                                    break;
+                                }
+                                switch(strArgs[i])
+                                {
+                                    case 'a':
+                                        args.set(0);
+                                        break;
+                                    case 'f':
+                                        args.set(1);
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch(...){};
                 std::string procDir;
                 std::string procInfo;
-                char buf[FILEBLOCKSIZE];
-                std::stringstream ss;
+                char fileBuf[FILEBLOCKSIZE];
                 DIR *dir = opendir ("/proc");
                 struct dirent *ent;
                 std::string fileName;
@@ -327,61 +355,79 @@ void ClientThread::ParseCommand_(const std::string command){
                         if (std::isdigit(ent->d_name[0])){
                             procDir = "/proc/" + std::string(ent->d_name);
                             if (access(procDir.c_str(), R_OK) == 0){
-                                file = open((procDir + "/stat").c_str(), O_RDONLY);
-                                if (file >= 0){
-                                    read(file, &buf, FILEBLOCKSIZE);
-                                    ss << buf;
+                                int statFile = open((procDir + "/stat").c_str(), O_RDONLY);
+                                bool isSystem = false;
+                                std::string exe;
+                                ssize_t bytes = readlink((procDir + "/exe").c_str(), fileBuf, FILEBLOCKSIZE);
+                                if (bytes > 0){
+                                    exe = "\texe: " + std::string(fileBuf, bytes) + "\n";
+                                }
+                                else{
+                                    if (args[0]){
+                                        isSystem = true;
+                                    }
+                                    else{
+                                        continue;
+                                    }
+                                }
+                                if (statFile >= 0){
+                                    std::stringstream ss;
+                                    read(statFile, &fileBuf, FILEBLOCKSIZE);
+                                    ss << fileBuf;
                                     std::getline(ss, procInfo, ' ');
                                     allProcInfo += procInfo + ":\n";
-
+                                    
                                     std::getline(ss, procInfo, ')');
                                     procInfo.erase(0, 1);
+                                    if (isSystem){
+                                        procInfo = "[" + procInfo + "]";
+                                    }
                                     allProcInfo += "\tName: " + procInfo + "\n";
-                                    ss.str("");
-                                    close(file);
+                                    close(statFile);
                                 }
                                 else{
                                     continue;
                                 }
-                                char buf[FILEBLOCKSIZE];
+                                if (!exe.empty()){
+                                    allProcInfo += exe;
+                                }
                                 procInfo = "";
-                                ssize_t bytes = readlink((procDir + "/exe").c_str(), buf, FILEBLOCKSIZE);
-                                if (bytes > 0){
-                                    allProcInfo += "\texe: " + std::string(buf, bytes) + "\n";
-                                }
-
-                                bytes = readlink((procDir + "/cwd").c_str(), buf, FILEBLOCKSIZE);
+                                bytes = readlink((procDir + "/cwd").c_str(), fileBuf, FILEBLOCKSIZE);
                                 if (bytes >= 0){
-                                    allProcInfo += "\tcwd: " + std::string(buf, bytes) + "\n";
+                                    allProcInfo += "\tcwd: " + std::string(fileBuf, bytes) + "\n";
                                 }
-                                file = open((procDir + "/cmdline").c_str(), O_RDONLY);
-                                if (file >= 0){
-                                    ssize_t bytes = 0;
-                                    std::string cmd;
-                                    while (true){
-                                        bytes = read(file, &buf, FILEBLOCKSIZE);
-                                        if (bytes > 0){
-                                            ss << std::string(buf, bytes);
+                                if (!isSystem){
+                                    int cmdFile = open((procDir + "/cmdline").c_str(), O_RDONLY);
+                                    if (cmdFile >= 0){
+                                        ssize_t bytes = 0;
+                                        std::string cmd;
+                                        std::stringstream ss;
+                                        while (true){
+                                            bytes = read(cmdFile, &fileBuf, FILEBLOCKSIZE);
+                                            if (bytes > 0){
+                                                ss << std::string(fileBuf, bytes);
+                                            }
+                                            else{
+                                                break;
+                                            }
                                         }
-                                        else{
-                                            break;
+                                        close(cmdFile);
+                                        allProcInfo += "\tcmdline: ";
+                                        while (std::getline(ss, cmd, '\0')){
+                                            allProcInfo += cmd + " ";
                                         }
+                                        allProcInfo += "\n";
                                     }
-                                    while (std::getline(ss, cmd, '\0')){
-                                        allProcInfo += cmd;
-                                    }
-                                    allProcInfo += "\n";
-                                    close(file);
                                 }
-                                if (access((procDir + "/fd").c_str(), R_OK) == 0){
-                                    DIR *descrDir = opendir ((procDir + "/fd").c_str());
+                                if (args[1]){
+                                    DIR *descrDir = opendir((procDir + "/fd").c_str());
                                     struct dirent *descrEnt;
                                     if (descrDir != nullptr) {
-                                        while ((ent = readdir(descrDir)) != NULL) {
+                                        while ((descrEnt = readdir(descrDir)) != NULL) {
                                             struct stat fileInfo;
                                             char modeval [9];
-                                            procInfo = "\t\t";
-                                            if(stat((procDir + "/fd/" + ent->d_name).c_str(), &fileInfo) == 0){
+                                            procInfo = "\t";
+                                            if(stat((procDir + "/fd/" + descrEnt->d_name).c_str(), &fileInfo) == 0){
                                                 mode_t perm = fileInfo.st_mode;
                                                 modeval[0] = (perm & S_IRUSR) ? 'r' : '-';
                                                 modeval[1] = (perm & S_IWUSR) ? 'w' : '-';
@@ -393,19 +439,27 @@ void ClientThread::ParseCommand_(const std::string command){
                                                 modeval[7] = (perm & S_IWOTH) ? 'w' : '-';
                                                 modeval[8] = (perm & S_IXOTH) ? 'x' : '-';
                                             }
-                                            bytes = readlink((procDir + "/fd/" + ent->d_name).c_str(), buf, FILEBLOCKSIZE);
+                                            bytes = readlink((procDir + "/fd/" + descrEnt->d_name).c_str(), fileBuf, FILEBLOCKSIZE);
                                             if (bytes >= 0){
-                                                allProcInfo += "\t\t" + std::string(modeval, 9) + " " + ent->d_name + " -> " + std::string(buf, bytes) + "\n";
+                                                allProcInfo += "\t" + std::string(modeval, 9) + " " + descrEnt->d_name + " -> " + std::string(fileBuf, bytes) + "\n";
                                             }
                                         }
+                                        closedir(descrDir);
                                     }
                                 }
                                 MessageObject::SendMessageObject(socket_, INFO, allProcInfo);
                             }
                         }
                     }
+                    closedir(dir);
                 }
                 MessageObject::SendMessageObject(socket_, SUCCESS);
+                if (args[0]){
+                    LOG(INFO) << name_ << '(' << IP_ << ':' << port_ << ") got a list of server's system processes";
+                }
+                else{
+                    LOG(INFO) << name_ << '(' << IP_ << ':' << port_ << ") got a list of server's processes";
+                }
                 break;
             }
             case Commands::LOADFILE:
@@ -428,12 +482,15 @@ void ClientThread::ParseCommand_(const std::string command){
                                     if (sizeOfBlock > 0){
                                         MessageObject::SendMessageObject(socket_, LOAD, buf, sizeOfBlock);
                                         MessageObject::SendMessageObject(socket_, SUCCESS);
+                                        LOG(INFO) << "file " << absPath.string() << " was loaded by " << name_ << '(' << IP_ << ':' << port_ << ")";
                                     }
                                     else if (sizeOfBlock == 0){
                                         MessageObject::SendMessageObject(socket_, SUCCESS);
+                                        LOG(INFO) << "file " << absPath.string() << " was loaded by " << name_ << '(' << IP_ << ':' << port_ << ")";
                                     }
                                     else{
                                         MessageObject::SendMessageObject(socket_, BADLOAD, "Something got wrong with file on server.\nDownload is interrupted!");
+                                        LOG(WARNING) << "something got wrong with file " << absPath.string() << " Client's [" << name_ << '(' << IP_ << ':' << port_ << ")] download is interrupted!";
                                     }
                                     badLoadThread_.join();
                                     break;

@@ -78,7 +78,7 @@ namespace CSA
     const std::map<Commands, std::string> HELPSTRINGS
     {
         {Commands::CD, "cd - show current directory;\n\
-cd <absolute or relative to the current directory> - change current directory;"},
+cd <path absolute or relative to the current directory> - change current directory;"},
         {Commands::CLEARLOGS, "clearlogs - clear logs;"},
         {Commands::EXIT, "exit - exit the program;"},
         {Commands::HELP, "help - help on all commands;\n\
@@ -86,10 +86,16 @@ help <name of command> - help on a specific command;"},
         {Commands::LOADFILE, "load \"path to file\" - load file to download directory;\n\
 load \"path to file\" <filename> - load file to download directory and name it as <filename>;"},
         {Commands::LOADDIR, "loaddir - show current download directory;\n\
-loaddir <absolute or relative to the current download directory> - change current download directory;"},
-        {Commands::GETDIRLIST, "ls - show a list of files in current directory;\n\
-ls <absolute or relative to the current directory> - show a list of files in directory;"},
-        {Commands::PROCS, "procs - show information about server's processes;"},
+loaddir <path absolute or relative to the current download directory> - change current download directory;"},
+        {Commands::GETDIRLIST, "ls -<args> - show a list of files in current directory;\n\
+ls <path absolute or relative to the current directory> - show a list of files in directory;\n\
+ls -<args> \"path absolute or relative to the current directory\" - show a list of files in directory with arguments;\n\
+\ta\tShow hidden elements;\n\
+\tF\tDo not show regular files;\n\
+\tD\tDo not show directories"},
+        {Commands::PROCS, "procs -<args> - show information about server's processes;\n\
+\ta\tShow system processes;\n\
+\tf\tShow information about descriptors;"},
         {Commands::SAVEDIR, "savedir - save current directory on account;"},
     };
 

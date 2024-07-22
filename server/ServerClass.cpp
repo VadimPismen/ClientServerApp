@@ -7,6 +7,12 @@ ServerClass::ServerClass(std::string cfgFile): cfgFile_(cfgFile){
     libconfig::Setting& root_ =  cfg_.getRoot();
     libconfig::Setting& serverconfs_ = root_.lookup("server");
     serverconfs_.lookupValue("port", port_);
+
+    serverconfs_.lookupValue("logs", logsDir_);
+    logsDir_ = GetAbsolutePath_(logsDir_, std::filesystem::current_path().string());
+    FLAGS_log_dir = logsDir_;
+    FLAGS_alsologtostderr = true;
+    google::InitGoogleLogging("Server");
 }
 
 ServerClass::~ServerClass(){
@@ -32,8 +38,7 @@ void ServerClass::OpenServer(){
         perror("Bind error: ");
         exit(1);
     }
-    std::cout << "Server is opened on " << inet_ntoa(addr_.sin_addr) << ':' << port_ << std::endl;
-    LOG(INFO) << "Server is opened on " << inet_ntoa(addr_.sin_addr) << ':' << port_;
+    LOG(INFO) << "Server is opened on port " << port_;
     adminCommandsThread_ = boost::thread(&ServerClass::GetAdminCommands_, this);
     while(true){
         listen(serverSocket_, SOMAXCONN);
@@ -74,8 +79,9 @@ void ServerClass::GetAdminCommands_(){
     }
 }
 
-void ServerClass::DeleteClient(int socket){
+void ServerClass::DeleteClient(int socket, std::string message){
     close(socket);
+    LOG(INFO) << message;
     listOfClients_.erase(socket);
     return;
 }
@@ -133,5 +139,16 @@ void ServerClass::SaveUserDir(std::string login, std::string dir)
             dirSet = dir;
             cfg_.writeFile(cfgFile_);
         }
+    }
+}
+
+std::string ServerClass::GetAbsolutePath_(const std::string path, const std::string base){
+    boost::filesystem::path newPath(path);
+    boost::filesystem::path basePath(base);
+    if (newPath.is_absolute()){
+        return path;
+    }
+    else{
+        return boost::filesystem::canonical(newPath, basePath).string();
     }
 }
