@@ -172,7 +172,7 @@
 ```
 server : 
 {
-  logs = "./logs";
+  logs = "./mylogs";
   port = 4321;
 };
 accounts = ( 
@@ -202,7 +202,7 @@ connection :
   ip = "192.168.4.201"
   port = 4321;
 };
-logs = "./logs";
+logs = "./mylogs";
 loadDir = "./loads";
 ```
 Группа ``connection`` содержит адрес и порт сервера, к которому нужно подключиться.
