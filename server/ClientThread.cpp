@@ -309,7 +309,7 @@ void ClientThread::ParseCommand_(const std::string command){
                     LOG(INFO) << name_ << '(' << IP_ << ':' << port_ << ") got a list of files in " << directory;
                 }
                 else {
-                    MessageObject::SendMessageObject(socket_, INFO, "Current directory is not available!");
+                    MessageObject::SendMessageObject(socket_, INFO, "Directory is not available!");
                     LOG(INFO) << name_ << '(' << IP_ << ':' << port_ << ") tried to get a list of files in " << directory;
                 }
                 MessageObject::SendMessageObject(socket_, SUCCESS);
