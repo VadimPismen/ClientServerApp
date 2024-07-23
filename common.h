@@ -78,7 +78,6 @@ namespace CSA
     {
         {Commands::CD, "cd - show current directory;\n\
 cd <path absolute or relative to the current directory> - change current directory;"},
-        {Commands::CLEARLOGS, "clearlogs - clear logs;"},
         {Commands::EXIT, "exit - exit the program;"},
         {Commands::HELP, "help - help on all commands;\n\
 help <name of command> - help on a specific command;"},

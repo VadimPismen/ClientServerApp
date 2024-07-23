@@ -15,10 +15,7 @@ ServerClass::ServerClass(std::string cfgFile): cfgFile_(cfgFile){
     google::InitGoogleLogging("Server");
 }
 
-ServerClass::~ServerClass(){
-    close(serverSocket_);
-    adminCommandsThread_.interrupt();
-}
+ServerClass::~ServerClass(){}
 
 void ServerClass::OpenServer(){
     serverSocket_ = socket(AF_INET, SOCK_STREAM, 0);
@@ -38,41 +35,35 @@ void ServerClass::OpenServer(){
     }
     LOG(INFO) << "Server is opened on port " << port_;
     adminCommandsThread_ = boost::thread(&ServerClass::GetAdminCommands_, this);
-    while(true){
+    while(isOnline_){
         listen(serverSocket_, SOMAXCONN);
         int sock = accept(serverSocket_, NULL, NULL);
         if (sock >= 0){
             listOfClients_.try_emplace(sock);
             listOfClients_[sock].StartWorking(sock, this);
         }
+        else{
+            break;
+        }
     }
 }
 
 void ServerClass::GetAdminCommands_(){
-    try{
-        while (true){
-            boost::this_thread::interruption_point();
-            std::string command;
-            std::getline(std::cin, command);
-            if (command == "users"){
-                for(auto& user : listOfClients_){
-                    std::cout << user.first << " " << user.second.getIP() << " " << user.second.getName() << std::endl;
-                }
-                continue;
+    while (true){
+        std::string command;
+        std::getline(std::cin, command);
+        if (command == "users"){
+            for(auto& user : listOfClients_){
+                std::cout << user.first << " " << user.second.getIP() << " " << user.second.getName() << std::endl;
             }
-            if (command == "stop"){
-                this->~ServerClass();
-                return;
-            }
-            if (command == "clearlogs"){
-                std::filesystem::remove_all(logsDir_);
-                std::filesystem::create_directory(logsDir_);
-                continue;
-            }
+            continue;
         }
-    }
-    catch(boost::thread_interrupted){
-        return;
+        if (command == "stop"){
+            isOnline_ = false;
+            close(serverSocket_);
+            exit(0);
+            return;
+        }
     }
 }
 

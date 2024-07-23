@@ -212,21 +212,6 @@ void ClientClass::ParseCommand_(const std::string &command)
                 Disconnect_();
                 break;
             }
-            case Commands::CLEARLOGS:
-            {
-                try{
-                    std::filesystem::remove_all(logsDir_);
-                    std::filesystem::create_directory(logsDir_);
-                }
-                catch(...){
-                    std::cout << "Something got wrong..." << std::endl;
-                    LOG(WARNING) << "clearing logs is unsuccessful.";
-                    break;
-                }
-                std::cout << "Logs are cleared." << std::endl;
-                LOG(INFO) << "logs was cleared.";
-                break;
-            }
             case Commands::LOADDIR:
             {
                 std::string secondArg;

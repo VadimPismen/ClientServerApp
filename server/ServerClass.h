@@ -33,6 +33,7 @@ namespace CSA
         
         std::string logsDir_;
 
+        bool isOnline_ = true;
         int port_;
         int serverSocket_;
         struct sockaddr_in addr_;
