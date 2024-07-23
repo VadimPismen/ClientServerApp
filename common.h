@@ -81,7 +81,7 @@ cd <path absolute or relative to the current directory> - change current directo
         {Commands::EXIT, "exit - exit the program;"},
         {Commands::HELP, "help - help on all commands;\n\
 help <name of command> - help on a specific command;"},
-        {Commands::LOADFILE, "load \"path to file\" - load file to download directory;\n\
+        {Commands::LOADFILE, "load <path to file> or \"path to file\" - load file to download directory;\n\
 load \"path to file\" <filename> - load file to download directory and name it as <filename>;"},
         {Commands::LOADDIR, "loaddir - show current download directory;\n\
 loaddir <path absolute or relative to the current download directory> - change current download directory;"},

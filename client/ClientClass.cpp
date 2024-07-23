@@ -131,14 +131,29 @@ void ClientClass::ParseCommand_(const std::string &command)
                 std::smatch match;
                 std::regex_search(command, match, CSA::LOADFILEREGEX);
                 std::string serverFileAdr = match.str();
+                std::string clientFileName = "";
                 if (serverFileAdr.empty()){
-                    std::cout << "Address of server file must be in \"" << std::endl;
-                    break;
+                    try{
+                        serverFileAdr = command.substr(5);
+                    }
+                    catch(...){
+                        std::cout << "Empty file path!" << std::endl;
+                        break;
+                    }
                 }
-                std::string clientFileName = command.substr(match.position() + serverFileAdr.length() + 1);
-                serverFileAdr.erase(0,1);
-                while (clientFileName[0] == ' '){
-                    clientFileName.erase(0, 1);
+                else{
+                    clientFileName = command.substr(match.position() + serverFileAdr.length() + 1);
+                    serverFileAdr.erase(0,1);
+                    while (clientFileName[0] == ' '){
+                        clientFileName.erase(0, 1);
+                    }
+                }
+                while (serverFileAdr[0] == ' '){
+                        serverFileAdr.erase(0, 1);
+                    }
+                if (serverFileAdr.empty()){
+                    std::cout << "Empty file path!" << std::endl;
+                    break;
                 }
                 if (clientFileName.empty()){
                     std::size_t begOfName = serverFileAdr.find_last_of('/');
