@@ -30,25 +30,32 @@
 
 namespace CSA
 {
+    // Размер буфера для получения сообщения по блокам
     const size_t BUFFSIZE = 1024;
+    // Размер буфера для записи байтов длины сообщения
     const size_t LENSIZE = 10;
+    // Размер блока чтения файла
     const size_t FILEBLOCKSIZE = 4096;
+    // Регулярное выражение, используемое для проверки присутствия кавычек
     const std::regex LOADFILEREGEX("[\"](.*?)(?=[\"](\\s|$))");
-    const std::regex LSREGEX("^[-]\\S*(\\s|$)");
 
-    const std::string SIGN = "CSA";
     const std::string DEFDIR = "loads";
     const std::string UNDEFCOM = "Undefined command: ";
     const std::string NOACCESSTO = "No access to ";
     const std::string DIRECTORY = "directory";
 
-    const char INFO = 'I';
-    const char LOAD = 'L';
-    const char BAD = 'B';
+    // Сигнатуры
 
+    // Промежуточная информация
+    const char INFO = 'I';
+    // Загрузка файла
+    const char LOAD = 'L';
+    // Плохой результат
+    const char BAD = 'B';
+    // Успех. Сообщение должно быть пустым
     const char SUCCESS = 'S';
     
-
+    // Перечисление команд, используемое сервером и клиентом для выбора действий
     enum class Commands{
         CD,
         CLEARLOGS,
@@ -61,6 +68,7 @@ namespace CSA
         SAVEDIR,
     };
 
+    // Словарь, указывающий соответствие между строкой и командой
     const std::map<std::string, Commands> COMMANDS
     {
         {"cd", Commands::CD},
@@ -74,6 +82,7 @@ namespace CSA
         {"savedir", Commands::SAVEDIR},
     };
 
+    // Словарь, указывающий на соответствие команды строке помощи
     const std::map<Commands, std::string> HELPSTRINGS
     {
         {Commands::CD, "cd - show current directory;\n\
@@ -97,6 +106,8 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
         {Commands::SAVEDIR, "savedir - save current directory on account;"},
     };
 
+    // Возможные исключения
+
     class ConnectionLostException{};
     class SocketCreationException{};
     class BindException{};
@@ -104,6 +115,7 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
     class MessageObject
     {
     public:
+        // Конструкторы
         MessageObject(char signature, std::string message):
         signature_(signature){
             sizeOfMessage_ = message.size();
@@ -120,12 +132,13 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
 
         ~MessageObject(){};
         
+        // Геттеры
         char getSignature(){ return signature_;};
         size_t getsizeOfMessage(){ return sizeOfMessage_;};
         std::string getMessage(){ return std::string(message_.begin(), message_.end());};
         std::vector<char> getBytes(){ return message_;};
 
-
+        // Отправить текстовое сообщение по сокету с определённой сигнатурой
         static ssize_t SendMessageObject(int socket, char signature, const std::string &message){
             size_t sizeOfMessage = message.size();
             if (send(socket, &signature, sizeof(signature), MSG_NOSIGNAL) < 0){
@@ -147,6 +160,7 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
             return allSentBytes;
         }
 
+        // Отправить двоичное сообщение по сокету с определённой сигнатурой
         static ssize_t SendMessageObject(int socket, char signature, const std::vector<char> &message){
             size_t sizeOfMessage = message.size();
             if (send(socket, &signature, sizeof(signature), MSG_NOSIGNAL) < 0){
@@ -168,6 +182,7 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
             return allSentBytes;
         }
 
+        // Отправить сообщение, содержащее c-строку
         static ssize_t SendMessageObject(int socket, char signature, const char *message, size_t sizeOfMessage){
             if (send(socket, &signature, sizeof(signature), MSG_NOSIGNAL) < 0){
                 throw ConnectionLostException();
@@ -188,6 +203,7 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
             return allSentBytes;
         }
 
+        // Отправить сообщение, содержащее только сигнатуру
         static ssize_t SendMessageObject(int socket, char signature){
             size_t sizeOfMessage = 0;
             if (send(socket, &signature, sizeof(signature), MSG_NOSIGNAL) < 0){
@@ -199,6 +215,7 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
             return 0;
         }
 
+        // Отправить объект сообщения по сети
         ssize_t SendMessageObject(int socket){
             if (send(socket, &signature_, sizeof(signature_), MSG_NOSIGNAL) < 0){
                 throw ConnectionLostException();
@@ -219,6 +236,7 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
             return allSentBytes;
         }
 
+        // Получить объект сообщения
         static MessageObject RecvMessageObject(int socket){
             char signature = '\0';
             size_t sizeOfMessage = 0;
@@ -247,8 +265,13 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
         }
 
     private:
+        // Поля пакета:
+
+        // Сигнатура
         char signature_ = '\0';
+        // Размер сообщения
         size_t sizeOfMessage_ = 0;
+        // Содержимое сообщения
         std::vector<char> message_ = {};
     };
 }
