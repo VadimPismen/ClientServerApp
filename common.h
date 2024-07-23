@@ -43,9 +43,8 @@ namespace CSA
     const std::string DIRECTORY = "directory";
 
     const char INFO = 'I';
-    const char GETOUT = 'O';
     const char LOAD = 'L';
-    const char BADLOAD = 'B';
+    const char BAD = 'B';
 
     const char SUCCESS = 'S';
     
@@ -114,12 +113,6 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
         signature_(signature), message_(message){
             sizeOfMessage_ = message.size();
         };
-
-        MessageObject(char signature, size_t sizeOfMessage, std::string message):
-        signature_(signature), sizeOfMessage_(sizeOfMessage){
-            message_ = std::vector<char>(message.begin(), message.end());
-        };
-
 
         MessageObject(char signature, size_t sizeOfMessage, std::vector<char> message):
         signature_(signature), sizeOfMessage_(sizeOfMessage), message_(message){};

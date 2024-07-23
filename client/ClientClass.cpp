@@ -77,7 +77,7 @@ void ClientClass::StartConnection() {
                 break;
             }
             else{
-                if (recv.getSignature() != GETOUT){
+                if (recv.getSignature() != BAD){
                     std::cout << recv.getMessage() << std::endl << std::endl;
                     LOG(INFO) << "unsuccessful attempt.";
                 }
@@ -169,10 +169,10 @@ void ClientClass::ParseCommand_(const std::string &command)
                                 if (writtenBytes < 0){
                                     std::cout << "Something got wrong with client's file.\nDownload is interrupted!" << std::endl;
                                     LOG(WARNING) << "something got wrong with file. Download is interrupted!";
-                                    MessageObject::SendMessageObject(socket_, BADLOAD);
+                                    MessageObject::SendMessageObject(socket_, BAD);
                                     close(clientFile);
                                     while (true){
-                                        if (MessageObject::RecvMessageObject(socket_).getSignature() == BADLOAD){
+                                        if (MessageObject::RecvMessageObject(socket_).getSignature() == BAD){
                                             break;
                                         }
                                     }

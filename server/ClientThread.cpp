@@ -63,7 +63,7 @@ void ClientThread::WorkWithClient_(){
                     LOG(INFO) << IP_ << ':' << port_ << ": unsuccessful login attempt.";
                 }
                 else{
-                    MessageObject::SendMessageObject(socket_, GETOUT);
+                    MessageObject::SendMessageObject(socket_, BAD);
                     isOnline_ = false;
                     parent_->DeleteClient(socket_, IP_ + ":" + std::to_string(port_) + ": couldn't login. Kicked!");
                     return;
@@ -489,7 +489,7 @@ void ClientThread::ParseCommand_(const std::string command){
                                         LOG(INFO) << "file " << absPath.string() << " was loaded by " << name_ << '(' << IP_ << ':' << port_ << ")";
                                     }
                                     else{
-                                        MessageObject::SendMessageObject(socket_, BADLOAD, "Something got wrong with file on server.\nDownload is interrupted!");
+                                        MessageObject::SendMessageObject(socket_, BAD, "Something got wrong with file on server.\nDownload is interrupted!");
                                         LOG(WARNING) << "something got wrong with file " << absPath.string() << " Client's [" << name_ << '(' << IP_ << ':' << port_ << ")] download is interrupted!";
                                     }
                                     badLoadThread_.join();
@@ -534,7 +534,7 @@ void ClientThread::interceptLoadFileInterruption_(bool &isNotInterrupted)
 {
     if (MessageObject::RecvMessageObject(socket_).getSignature() != SUCCESS){
         isNotInterrupted = false;
-        MessageObject::SendMessageObject(socket_, BADLOAD);
+        MessageObject::SendMessageObject(socket_, BAD);
     }
     return;
 }
