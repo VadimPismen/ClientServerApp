@@ -25,8 +25,7 @@ void ServerClass::OpenServer(){
     if (serverSocket_ < 0)
     {
         LOG(ERROR) << "socket creation error!";
-        perror("Socket creation error: ");
-        exit(1);
+        throw SocketCreationException();
     }
     
     addr_.sin_family = AF_INET;
@@ -35,8 +34,7 @@ void ServerClass::OpenServer(){
     if (bind(serverSocket_, (struct sockaddr*)&addr_, sizeof(addr_)) < 0)
     {
         LOG(ERROR) << "socket binding error!";
-        perror("Bind error: ");
-        exit(1);
+        throw BindException();
     }
     LOG(INFO) << "Server is opened on port " << port_;
     adminCommandsThread_ = boost::thread(&ServerClass::GetAdminCommands_, this);
@@ -64,12 +62,11 @@ void ServerClass::GetAdminCommands_(){
             }
             if (command == "stop"){
                 this->~ServerClass();
-                exit(0);
                 return;
             }
             if (command == "clearlogs"){
-                std::filesystem::remove_all("logs");
-                std::filesystem::create_directory("logs");
+                std::filesystem::remove_all(logsDir_);
+                std::filesystem::create_directory(logsDir_);
                 continue;
             }
         }

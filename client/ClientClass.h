@@ -25,6 +25,7 @@ namespace CSA
 
         std::string GetAbsolutePath_(const std::string path, const std::string base);
 
+        bool isOnline_ = true;
         std::string logsDir_;
         std::string IP_;
         int port_;

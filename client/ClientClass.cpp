@@ -12,7 +12,7 @@ ClientClass::ClientClass(std::string cfgFile): cfgFile_(cfgFile){
     google::InitGoogleLogging("Client");
 
     libconfig::Setting& newLoadDirSet =  root_.lookup("loadDir");
-    std::string newLoadDir = logsDir_ = GetAbsolutePath_(newLoadDirSet, std::filesystem::current_path().string());
+    std::string newLoadDir = GetAbsolutePath_(newLoadDirSet, std::filesystem::current_path().string());
     if (std::filesystem::is_directory(newLoadDir)){
         loadDir_ = newLoadDir;
     }
@@ -25,10 +25,7 @@ ClientClass::ClientClass(std::string cfgFile): cfgFile_(cfgFile){
     LOG(INFO) << "client object was created. Download directory is " << loadDir_;
 };
 
-ClientClass::~ClientClass(){
-    close(port_);
-    exit(0);
-}
+ClientClass::~ClientClass(){}
 
 void ClientClass::StartConnection() {
     libconfig::Setting& connectionConfs_ = cfg_.getRoot().lookup("connection");
@@ -39,8 +36,7 @@ void ClientClass::StartConnection() {
     if (socket_ < 0)
     {
         LOG(ERROR) << "socket creation error!";
-        perror("Socket creation error");
-        exit(1);
+        throw SocketCreationException();
     }
 
     addr_.sin_family = AF_INET;
@@ -49,8 +45,7 @@ void ClientClass::StartConnection() {
     if (connect(socket_, (struct sockaddr*)&addr_, sizeof(addr_)) < 0)
     {
         LOG(ERROR) << "connection to " << IP_ << ':' << port_ << " is failed!";
-        perror("Connection error");
-        exit(1);
+        throw BindException();
     }
     LOG(INFO) << "connected to " << IP_ << ':' << port_;
 
@@ -86,7 +81,7 @@ void ClientClass::StartConnection() {
                 }
             }
         }
-        while(true){
+        while(isOnline_){
             ParseCommand_(WriteString_());
         }
     }
@@ -215,14 +210,13 @@ void ClientClass::ParseCommand_(const std::string &command)
                 std::cout << "Exiting..." << std::endl;
                 LOG(INFO) << "exiting...";
                 Disconnect_();
-                return;
                 break;
             }
             case Commands::CLEARLOGS:
             {
                 try{
-                    std::filesystem::remove_all("logs");
-                    std::filesystem::create_directory("logs");
+                    std::filesystem::remove_all(logsDir_);
+                    std::filesystem::create_directory(logsDir_);
                 }
                 catch(...){
                     std::cout << "Something got wrong..." << std::endl;
@@ -304,7 +298,8 @@ void ClientClass::ParseCommand_(const std::string &command)
 }
 
 inline void ClientClass::Disconnect_(){
-    this->~ClientClass();
+    close(socket_);
+    isOnline_ = false;
     return;
 }
 

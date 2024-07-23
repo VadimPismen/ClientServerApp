@@ -99,6 +99,8 @@ ls -<args> \"path absolute or relative to the current directory\" - show a list 
     };
 
     class ConnectionLostException{};
+    class SocketCreationException{};
+    class BindException{};
 
     class MessageObject
     {
